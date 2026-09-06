@@ -21,6 +21,7 @@ val geminiTargetPackagePatch = bytecodePatch(
     compatibleWith("com.google.android.apps.bard")
 
     execute {
+        VersionHookRegistry.requireProfile(packageMetadata)
         val pkgName = packageMetadata.packageName
         val verName = packageMetadata.versionName
         println("[GeminiTargetPatch] Target App: $pkgName (Version: $verName)")
@@ -29,7 +30,7 @@ val geminiTargetPackagePatch = bytecodePatch(
         val replacementPackage = "com.google.android.googlequicksearchbox.morphe"
 
         val targetSpec = VersionHookRegistry.getTargetSpec(HookId.GEMINI_TARGET_REDIRECT, pkgName, verName)
-        val searchPackage = targetSpec?.anchorStrings?.firstOrNull() ?: targetPackage
+        val searchPackage = targetSpec.anchorStrings.single()
 
         val classes = getAllClassesWithString(searchPackage)
         println("[GeminiTargetPatch] Found ${classes.size} classes with string '$searchPackage'")
@@ -58,6 +59,7 @@ val geminiTargetPackagePatch = bytecodePatch(
                 }
             }
         }
+        check(totalReplacements == targetSpec.expectedMatches) { "Unexpected Gemini target count: $totalReplacements" }
         VersionHookRegistry.logHook(
             HookId.GEMINI_TARGET_REDIRECT,
             "DEX-Wide",
@@ -78,6 +80,7 @@ val geminiStandalonePatch = app.morphe.patcher.patch.resourcePatch(
     compatibleWith("com.google.android.apps.bard")
 
     execute {
+        VersionHookRegistry.requireProfile(packageMetadata)
         val pkgName = packageMetadata.packageName
         val verName = packageMetadata.versionName
         println("[GeminiStandalonePatch] Target App: $pkgName (Version: $verName)")

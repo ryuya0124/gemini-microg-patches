@@ -19,6 +19,7 @@ jobs:
       - name: Ensure Android API library
         run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36"'
       - run: scripts/build-mpp.sh
+      - run: scripts/check-hook-profiles.sh
       - name: Publish Morphe release
         env:
           GH_TOKEN: ${{ github.token }}

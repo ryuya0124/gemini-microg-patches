@@ -32,7 +32,9 @@ val processNameSanitizePatch = bytecodePatch(
     compatibleWith("com.google.android.googlequicksearchbox")
 
     execute {
-        val targetProcessKey = "com.google.android.googlequicksearchbox:googleapp"
+        val spec = VersionHookRegistry.target(HookId.PROCESS_NAME_REDIRECT, packageMetadata)
+        val mainSpec = VersionHookRegistry.target(HookId.MAIN_PROCESS_CHECK, packageMetadata)
+        val targetProcessKey = spec.anchorStrings.single()
         val candidateClasses = getAllClassesWithString(targetProcessKey)
         println("[ProcessNameSanitizePatch] Found ${candidateClasses.size} candidate classes with '$targetProcessKey'")
 
@@ -80,6 +82,8 @@ val processNameSanitizePatch = bytecodePatch(
             }
         }
 
+        check(targetMethodsToPatch == setOf("${spec.className}->${spec.methodName}")) { "Unexpected process provider: $targetMethodsToPatch" }
+
         // 2. プロセス名取得メソッド（Leacx;->b()）自体の戻り値直前にサニタイズ命令を注入
         var patchedProviderCount = 0
         for (methodSignature in targetMethodsToPatch) {
@@ -91,7 +95,7 @@ val processNameSanitizePatch = bytecodePatch(
             if (classDef != null) {
                 val mutableClass = mutableClassDefBy(classDef)
                 for (method in mutableClass.methods) {
-                    if (method.name == methodName && method.implementation != null) {
+                    if (method.name == methodName && spec.matches(method) && method.implementation != null) {
                         // v1, v2 を安全に使用できるようレジスタ数を最低 4 に拡張
                         ensureRegisters(method.implementation, 4)
 
@@ -122,12 +126,12 @@ val processNameSanitizePatch = bytecodePatch(
         // TikTok's main-process check compares against Context.getPackageName().
         // Give that check the real process name so :search uses its local account
         // store instead of recursively binding AccountSyncService to itself.
-        val mainProcessClasses = getAllClassesWithString("More than 1 custom main process specified")
+        val mainProcessClasses = getAllClassesWithString(mainSpec.anchorStrings.single())
         var fixedMainProcessChecks = 0
         for (classDef in mainProcessClasses) {
             val mutableClass = mutableClassDefBy(classDef)
             for (method in mutableClass.methods) {
-                if (method.returnType != "Z" || method.implementation == null) continue
+                if (!mainSpec.matches(method) || method.implementation == null) continue
                 for ((index, instruction) in method.instructions.toList().withIndex()) {
                     val ref = (instruction as? ReferenceInstruction)?.reference as? MethodReference ?: continue
                     if (instruction.opcode == Opcode.INVOKE_STATIC &&
@@ -140,7 +144,8 @@ val processNameSanitizePatch = bytecodePatch(
                 }
             }
         }
-        check(fixedMainProcessChecks == 1) {
+        check(patchedProviderCount == spec.expectedMatches) { "Unexpected provider return count: $patchedProviderCount" }
+        check(fixedMainProcessChecks == mainSpec.expectedMatches) {
             "Expected exactly one TikTok main-process check; found $fixedMainProcessChecks"
         }
         println("[ProcessNameSanitizePatch] Restored real process name for TikTok account store selection")

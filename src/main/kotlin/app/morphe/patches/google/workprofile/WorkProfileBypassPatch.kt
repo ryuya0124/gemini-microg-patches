@@ -23,12 +23,9 @@ val bypassWorkProfilePatch = bytecodePatch(
         val verName = packageMetadata.versionName
         println("[WorkProfilePatch] Target App: $pkgName (Version: $verName)")
 
-        val profile = VersionHookRegistry.findProfile(pkgName, verName)
-        if (profile != null) {
-            println("[WorkProfilePatch] Matched profile: ${profile.appName} (${profile.versionPattern.pattern})")
-        } else {
-            println("[WorkProfilePatch] Unknown version detected. Activating Resilient Dynamic Fallback.")
-        }
+        val profile = VersionHookRegistry.requireProfile(packageMetadata)
+        val spec = profile.hooks.getValue(HookId.WORK_PROFILE_BYPASS)
+        println("[WorkProfilePatch] Matched profile: ${profile.appName} ${profile.versionName}")
 
         var patchedCount = 0
 
@@ -38,6 +35,7 @@ val bypassWorkProfilePatch = bytecodePatch(
          * （他の変数レジスタを壊さない安全設計）
          */
         fun patchTrampolineControlFlow(targetMethod: MutableMethod, methodNameTag: String): Boolean {
+            check(spec.matches(targetMethod)) { "Unexpected trampoline target: $methodNameTag" }
             val insList = targetMethod.instructions.toList()
             var localPatched = false
 
@@ -45,9 +43,9 @@ val bypassWorkProfilePatch = bytecodePatch(
                 val ins = insList[idx]
                 if (ins.opcode == Opcode.CONST_STRING || ins.opcode == Opcode.CONST_STRING_JUMBO) {
                     val ref = (ins as? ReferenceInstruction)?.reference as? StringReference
-                    if (ref != null && ref.string.contains("Trampolining to web app for work profile")) {
+                    if (ref != null && ref.string == spec.anchorStrings[0]) {
                         // 文字列命令から手前（最大60命令）の最近傍の条件分岐命令を探索
-                        for (j in idx downTo maxOf(0, idx - 60)) {
+                        for (j in idx downTo maxOf(0, idx - spec.int("lookback"))) {
                             val candidate = insList[j]
                             if (candidate.opcode == Opcode.IF_EQZ) {
                                 val reg = (candidate as OneRegisterInstruction).registerA
@@ -91,7 +89,7 @@ val bypassWorkProfilePatch = bytecodePatch(
 
         // Fingerprint 1 から対象メソッドを解決してパッチ適用
         try {
-            val method = WorkProfileTrampolineFingerprint.method
+            val method = WorkProfileTrampolineFingerprint(spec).method
             if (patchTrampolineControlFlow(method, "WorkProfileTrampolineFingerprint")) {
                 patchedCount++
             }
@@ -101,7 +99,7 @@ val bypassWorkProfilePatch = bytecodePatch(
 
         // Fingerprint 2 から対象メソッドを解決してパッチ適用
         try {
-            val method = WorkProfileSkipFingerprint.method
+            val method = WorkProfileSkipFingerprint(spec).method
             if (patchTrampolineControlFlow(method, "WorkProfileSkipFingerprint")) {
                 patchedCount++
             }
@@ -112,7 +110,7 @@ val bypassWorkProfilePatch = bytecodePatch(
         // Tier 3: 全DEX文字列走査（フォールバック）
         if (patchedCount == 0) {
             println("[WorkProfilePatch] Engaging Tier 3 DEX-wide search...")
-            val anchorKeyword = "Trampolining to web app for work profile"
+            val anchorKeyword = spec.anchorStrings[0]
             val matchingClasses = getAllClassesWithString(anchorKeyword)
             for (classDef in matchingClasses) {
                 val mutableClass = mutableClassDefBy(classDef)
@@ -125,6 +123,7 @@ val bypassWorkProfilePatch = bytecodePatch(
             }
         }
 
+        check(patchedCount == spec.expectedMatches) { "Unexpected trampoline modification count: $patchedCount" }
         if (patchedCount == 0) {
             throw IllegalStateException("[WorkProfilePatch] FATAL: Could not apply Work Profile bypass!")
         } else {

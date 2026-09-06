@@ -29,6 +29,7 @@ val googleAppManifestPatch = resourcePatch(
     compatibleWith("com.google.android.googlequicksearchbox")
 
     execute {
+        VersionHookRegistry.requireProfile(packageMetadata)
         document("AndroidManifest.xml").use { document ->
             val appNode = document.getElementsByTagName("application").item(0) as? Element
             if (appNode != null) {
@@ -40,7 +41,7 @@ val googleAppManifestPatch = resourcePatch(
 
                 val metaSig = document.createElement("meta-data")
                 metaSig.setAttribute("android:name", "app.revanced.android.gms.SPOOFED_PACKAGE_SIGNATURE")
-                metaSig.setAttribute("android:value", "38918a453d07199354f8b19af05ec6562ced5788")
+                metaSig.setAttribute("android:value", VersionHookRegistry.target(HookId.GMS_CORE_REDIRECT, packageMetadata).value("originalGoogleSha1"))
                 appNode.appendChild(metaSig)
 
                 val metaPkg = document.createElement("meta-data")
@@ -154,6 +155,7 @@ val gmsCoreBytecodePatch = bytecodePatch(
     compatibleWith("com.google.android.googlequicksearchbox")
 
     execute {
+        VersionHookRegistry.requireProfile(packageMetadata)
         val pkgName = packageMetadata.packageName
         val verName = packageMetadata.versionName
         println("[GmsCoreBytecodePatch] Target App: $pkgName (Version: $verName)")
@@ -286,6 +288,7 @@ val gmsSignatureBypassPatch = bytecodePatch(
     compatibleWith("com.google.android.googlequicksearchbox")
 
     execute {
+        VersionHookRegistry.requireProfile(packageMetadata)
         val pkgName = packageMetadata.packageName
         val verName = packageMetadata.versionName
         println("[GmsSignatureBypassPatch] Applying signature and availability bypass to $pkgName ($verName)")
@@ -306,11 +309,9 @@ val gmsSignatureBypassPatch = bytecodePatch(
         }
 
         // 1. GooglePlayServicesUtil のバイパス (isGooglePlayServicesAvailable -> 0)
-        val playUtilCandidateStrings = listOf(
-            " requires Google Play services, but their signature is invalid.",
-            "The Google Play services resources were not found. Check your project configuration to ensure that the resources are included.",
-            " requires Google Play services, but they are missing."
-        )
+        val availabilitySpec = VersionHookRegistry.target(HookId.GMS_SIGNATURE_BYPASS, packageMetadata)
+        val certificateSpec = VersionHookRegistry.target(HookId.GMS_CERTIFICATE_VERIFIER, packageMetadata)
+        val playUtilCandidateStrings = availabilitySpec.anchorStrings
         val playUtilClasses = mutableSetOf<com.android.tools.smali.dexlib2.iface.ClassDef>()
         for (cand in playUtilCandidateStrings) {
             playUtilClasses.addAll(getAllClassesWithString(cand))
@@ -323,7 +324,7 @@ val gmsSignatureBypassPatch = bytecodePatch(
                 if (method.implementation == null) continue
                 // isGooglePlayServicesAvailable(Context, int) -> int (0 = SUCCESS)
                 val params = method.parameterTypes
-                if (params.size == 2 &&
+                if (availabilitySpec.matches(method) && params.size == 2 &&
                     params[0] == "Landroid/content/Context;" &&
                     params[1] == "I" &&
                     method.returnType == "I") {
@@ -343,7 +344,7 @@ val gmsSignatureBypassPatch = bytecodePatch(
         }
 
         // 2. GoogleSignatureVerifier のバイパス (c(...) -> true, b(...) -> true)
-        val sigVerifierClasses = getAllClassesWithString("Unable to obtain package certificate history.")
+        val sigVerifierClasses = getAllClassesWithString(certificateSpec.anchorStrings.single())
         println("[GmsSignatureBypassPatch] Found ${sigVerifierClasses.size} classes matching GoogleSignatureVerifier")
         var patchedSigVerifierCount = 0
         for (classDef in sigVerifierClasses) {
@@ -352,6 +353,8 @@ val gmsSignatureBypassPatch = bytecodePatch(
                 if (method.implementation == null) continue
                 // boolean を返すメソッド（c(PackageInfo, boolean) や b(String)）を全て true にバイパス
                 if (method.returnType == "Z") {
+                    check(certificateSpec.matches(method))
+                    check("${method.name}(${method.parameterTypes.joinToString("")})${method.returnType}" in certificateSpec.methodSignatures)
                     ensureRegisters(method.implementation, 2)
                     method.addInstructions(
                         0,
@@ -366,6 +369,8 @@ val gmsSignatureBypassPatch = bytecodePatch(
             }
         }
 
+        check(patchedPlayUtilCount == availabilitySpec.expectedMatches)
+        check(patchedSigVerifierCount == certificateSpec.expectedMatches)
         VersionHookRegistry.logHook(
             HookId.GMS_SIGNATURE_BYPASS,
             "Bytecode",

@@ -3,6 +3,8 @@ package app.morphe.patches.google.workprofile
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patches.google.common.HookId
+import app.morphe.patches.google.common.VersionHookRegistry
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -17,22 +19,22 @@ val workProfileEligibilityPatch = bytecodePatch(
 ) {
     compatibleWith("com.google.android.googlequicksearchbox")
     execute {
-        // Obfuscated field verified for this version. Fail closed on structural changes.
-        val candidates = getAllClassesWithString("Robin eligibility : is disallowed on Work profile")
+        val spec = VersionHookRegistry.target(HookId.WORK_PROFILE_ELIGIBILITY, packageMetadata)
+        val candidates = getAllClassesWithString(spec.anchorStrings[0])
         var patched = 0
         for (clazz in candidates) {
-            check(clazz.type == "Lappk;") { "Unsupported eligibility class: ${clazz.type}" }
+            check(clazz.type == spec.className) { "Unsupported eligibility class: ${clazz.type}" }
             for (method in mutableClassDefBy(clazz).methods) {
                 if (method.implementation == null) continue
                 val ins = method.instructions.toList()
                 val strings = ins.mapNotNull { ((it as? ReferenceInstruction)?.reference as? StringReference)?.string }
-                if ("Robin eligibility : is disallowed on Work profile" !in strings) continue
-                check("Robin eligibility : Work profile is allowed." in strings)
-                check(method.name == "k" && method.returnType == "Ljava/lang/Object;")
+                if (spec.anchorStrings[0] !in strings) continue
+                check(spec.anchorStrings[1] in strings)
+                check(spec.matches(method))
                 for ((index, instruction) in ins.withIndex()) {
                     val field = (instruction as? ReferenceInstruction)?.reference as? FieldReference ?: continue
                     if (instruction.opcode == Opcode.IGET_BOOLEAN && field.definingClass == clazz.type &&
-                        field.name == "x" && field.type == "Z") {
+                        field.name == spec.fieldName && field.type == spec.fieldType) {
                         val register = (instruction as OneRegisterInstruction).registerA
                         // Same width as iget-boolean, preserving all code offsets.
                         method.replaceInstruction(index, "const/16 v$register, 0x1")
@@ -41,7 +43,7 @@ val workProfileEligibilityPatch = bytecodePatch(
                 }
             }
         }
-        check(patched == 1) { "Expected one work-profile allowance read; found $patched" }
+        check(patched == spec.expectedMatches) { "Expected one work-profile allowance read; found $patched" }
         println("[WorkProfileEligibility] Enabled existing work-profile allowance (error 19)")
     }
 }

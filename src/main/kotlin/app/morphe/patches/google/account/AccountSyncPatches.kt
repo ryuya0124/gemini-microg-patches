@@ -32,7 +32,8 @@ val accountSwitchLockBypassPatch = bytecodePatch(
     compatibleWith("com.google.android.googlequicksearchbox")
 
     execute {
-        val lockMutexString = "Acquired account-switch Mutex."
+        VersionHookRegistry.requireProfile(packageMetadata)
+        val lockMutexString = VersionHookRegistry.target(HookId.ACCOUNT_SWITCH_LOCK_BYPASS, packageMetadata).anchorStrings.single()
         val candidateClasses = getAllClassesWithString(lockMutexString)
         println("[AccountSwitchLockBypass] Found ${candidateClasses.size} candidate classes with '$lockMutexString'")
 
@@ -104,7 +105,8 @@ val accountSyncLoopFixPatch = bytecodePatch(
     compatibleWith("com.google.android.googlequicksearchbox")
 
     execute {
-        val targetString = "Binding to service"
+        VersionHookRegistry.requireProfile(packageMetadata)
+        val targetString = VersionHookRegistry.target(HookId.ACCOUNT_SYNC_LOOP_FIX, packageMetadata).anchorStrings.single()
         val candidateClasses = getAllClassesWithString(targetString)
         println("[AccountSyncLoopFix] Found ${candidateClasses.size} candidate classes with '$targetString'")
 
@@ -163,6 +165,7 @@ val accountConvertFallbackPatch = bytecodePatch(
     compatibleWith("com.google.android.googlequicksearchbox")
 
     execute {
+        VersionHookRegistry.requireProfile(packageMetadata)
         fun ensureRegisters(impl: Any?, minRegs: Int) {
             if (impl == null) return
             try {
@@ -179,16 +182,13 @@ val accountConvertFallbackPatch = bytecodePatch(
         }
 
         // 1. ImmediateSuccessfulFuture クラス (Lfyca;) の検証
-        val immediateFutureClass = if (classDefByOrNull("Lfyca;") != null) {
-            "Lfyca;"
-        } else {
-            "Lfyca;"
-        }
+        val fallbackSpec = VersionHookRegistry.target(HookId.ACCOUNT_CONVERT_FALLBACK, packageMetadata)
+        val immediateFutureClass = requireNotNull(fallbackSpec.className)
         println("[AccountConvertFallback] Target ImmediateSuccessfulFuture class: $immediateFutureClass")
 
         // 2. flia クラス（アカウントリゾルバ）を特定
         // "Found google email address as the old primary email address" を持つ flhx から特定
-        val anchorStr = "Found google email address as the old primary email address"
+        val anchorStr = fallbackSpec.anchorStrings[0]
         val flhxCandidates = getAllClassesWithString(anchorStr)
         println("[AccountConvertFallback] Found ${flhxCandidates.size} candidate classes with '$anchorStr'")
 
@@ -205,7 +205,7 @@ val accountConvertFallbackPatch = bytecodePatch(
         }
 
         // eass（Failed to convert AGSA account name to account id. を持つクラス）からも探索
-        val eassCandidates = getAllClassesWithString("Failed to convert AGSA account name to account id.")
+        val eassCandidates = getAllClassesWithString(fallbackSpec.anchorStrings[1])
         for (classDef in eassCandidates) {
             for (field in classDef.fields) {
                 val fType = field.type

@@ -27,10 +27,12 @@ jobs:
         run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36"'
       - name: Build and verify Morphe bundle
         run: scripts/build-mpp.sh
+      - name: Verify version-specific hook records
+        run: scripts/check-hook-profiles.sh
       - name: Compile APK verification tools
         run: |
           for source in scripts/kotlin/*.kt; do
-            tools/kotlinc/bin/kotlinc "$source" -cp tools/morphe-desktop.jar -d "build/$(basename "$source" .kt).jar"
+            tools/kotlinc/bin/kotlinc "$source" -cp tools/morphe-desktop.jar:build/gemini-patches.jar -d "build/$(basename "$source" .kt).jar"
           done
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

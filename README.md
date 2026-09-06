@@ -56,6 +56,10 @@ ADB_SERIAL=端末のIP:ポート scripts/install-device.sh
 
 利用するプロファイル内にmicroG (`app.revanced.android.gms`) とアカウントを用意し、Gemini (Morphe)を開いて初回のアカウント権限とmicroG拡張権限を許可します。SamsungではADBからセキュアフォルダ内のActivityを起動できないため、フォルダ内で手動で開きます。
 
+## バージョン別フック情報
+
+[バージョン別記録](docs/versions/README.md)に、クラス・メソッド・フィールド・探索文字列・APKハッシュ・検証結果をまとめています。パッチ本体とDEX検証コードは同じ定義を参照します。新バージョンは別ファイルで追加し、未登録版への汎用適用は行いません。
+
 ## 開発コマンド
 
 | コマンド | 用途 |
@@ -64,6 +68,7 @@ ADB_SERIAL=端末のIP:ポート scripts/install-device.sh
 | `scripts/check-repo.sh` | Bash・ShellCheck・管理対象ファイルの検査 |
 | `scripts/compile-patches.sh` | Desktop向け中間JARをコンパイル |
 | `scripts/build-mpp.sh` | JVMクラス・Android DEX・Manifest入りの配布用MPPを生成・検証 |
+| `scripts/check-hook-profiles.sh` | バージョン定義・入力ハッシュ・生成JSONの整合性を検証 |
 | `scripts/build-google.sh` | Google本体のパッチ適用とDEX検証 |
 | `scripts/build-all.sh` | Google・Geminiランチャー・splitを元APKから生成 |
 | `scripts/verify-apks.sh` | Google本体のDEX検証を再実行 |

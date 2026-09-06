@@ -22,7 +22,7 @@ val googleAppCloneFixPatch = bytecodePatch(
     compatibleWith("com.google.android.googlequicksearchbox")
 
     execute {
-        val originalPackage = "com.google.android.googlequicksearchbox"
+        val originalPackage = VersionHookRegistry.target(HookId.PACKAGE_CLONE_REDIRECT, packageMetadata).anchorStrings.single()
         val clonedPackage = "com.google.android.googlequicksearchbox.morphe"
 
         val matchingClasses = getAllClassesWithString(originalPackage)

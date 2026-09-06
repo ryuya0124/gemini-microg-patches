@@ -45,3 +45,7 @@ Activityレジスタが生きている最後の `MainActivity.o:Z` への書き�
 - `apksigner verify`: 署名後のAPKを検証。
 
 これらはバイナリ破損や対象の取り違えを検出する。ログインとチャット応答は実機確認が必要。
+
+## バージョンごとの定義
+
+難読化名・探索アンカー・レジスタ条件はcommon/versions配下の版別Kotlinファイルに集約。VersionHookRegistryはversionName/versionCodeの完全一致を要求する。閲覧用JSONと追加手順は[バージョン別記録](versions/README.md)を参照。パッチのアルゴリズムと共通GMS定数は各パッチに保持する。

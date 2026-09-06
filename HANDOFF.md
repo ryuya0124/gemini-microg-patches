@@ -67,3 +67,15 @@
 - v0.1.0を公開済み: https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.1.0
 - CI実行34037445468とRelease実行34037506485が成功。全15 JVMクラスのAndroid DEX収録を検証。公開リポジトリURLをDesktopに渡してMPPをダウンロードし、13パッチの読み込みを確認。
 - Manager上での全パッチ適用操作は未確認。APK生成は既存のローカルスクリプトで検証済み。
+
+## バージョン別フック管理（2026-09-06）
+
+- 実行用定義はcommon/versionsのGoogle/Gemini版別Kotlin、閲覧用はdocs/versionsの生成JSON。
+- versionNameとversionCodeを完全一致で選択。未登録版の汎用フォールバックは廃止。
+- エラー19・権限要求・プロセス判定・GMS可用性/署名検証・転送のアンカーと対象を定義から参照。検証コードも共有。
+- 旧Lauby.aの誤記を実DEXのaiwk.fへ修正。Web転送回避の既存2命令挿入は保持。
+- 新バージョンは旧ファイルを残して追加し、check-hook-profiles.sh --writeでJSONを生成。詳細はdocs/versions/README.md。
+- 定義・入力ハッシュ・JSON整合性と未登録版拒否の検証をCI/Releaseへ追加。
+- 新構成でGoogle/Gemini/splitを再ビルド成功。Googleの15 DEX、Geminiの4 DEXと各AndroidManifestが整理前とバイト単位で一致。
+- 未登録versionName・異なるversionCodeの拒否、入力ハッシュとJSON整合性、MPP生成・17クラスのDEX収録・Desktop読み込みも検証成功。
+- 公開v0.1.0は変更しない。この整理はmainへ反映し、次回リリースに含める。
