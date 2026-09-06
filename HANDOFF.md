@@ -78,4 +78,10 @@
 - 定義・入力ハッシュ・JSON整合性と未登録版拒否の検証をCI/Releaseへ追加。
 - 新構成でGoogle/Gemini/splitを再ビルド成功。Googleの15 DEX、Geminiの4 DEXと各AndroidManifestが整理前とバイト単位で一致。
 - 未登録versionName・異なるversionCodeの拒否、入力ハッシュとJSON整合性、MPP生成・17クラスのDEX収録・Desktop読み込みも検証成功。
-- 公開v0.1.0は変更しない。この整理はmainへ反映し、次回リリースに含める。
+- バージョン別フック管理をv0.1.1として公開済み。公開v0.1.0の既存ファイルは変更しない。
+
+## v0.1.1公開（2026-09-06）
+
+- Release: https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.1.1
+- Release Actions実行34038918051でMPP生成・構造検証・版別定義の検証・公開に成功。
+- 配布物はMPP、patches-bundle.json、SHA256SUMS。Remote sourceの更新情報も0.1.1へ更新。
