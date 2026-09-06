@@ -64,4 +64,6 @@
 - R8/D8 9.4.17をSHA-256固定。SDK Build Tools 36.0.0内蔵D8はKotlin 2.4のmetadataを処理できなかったため使用しない。
 - VerifyMpp.ktが全JVMクラスのDEX収録とManifestを検証し、Morphe Desktopのlist-patchesでも読み込む。
 - patches-bundle.jsonでRemote sourceを登録可能。Clone appは公式ソース側で別途有効にする必要がある。
-- v0.1.0のReleaseを準備。Manager上での全パッチ適用操作は未確認。APK生成は既存のローカルスクリプトで検証済み。
+- v0.1.0を公開済み: https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.1.0
+- CI実行34037445468とRelease実行34037506485が成功。全15 JVMクラスのAndroid DEX収録を検証。公開リポジトリURLをDesktopに渡してMPPをダウンロードし、13パッチの読み込みを確認。
+- Manager上での全パッチ適用操作は未確認。APK生成は既存のローカルスクリプトで検証済み。
