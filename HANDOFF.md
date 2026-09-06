@@ -8,6 +8,7 @@
 - 通常領域: チャット「１＋１」→「2 です。」、「２＋２」→「4」を実機で確認。アプリ終了・再起動後もログインを維持。
 - セキュアフォルダ: user 150で `Work profile is allowed`、`Server eligibility response is ok`、`Robin is eligible` を確認し、その後ユーザーが利用成功を確認。
 - GitHub管理向けにソース・スクリプト・ドキュメントを整理。旧APK・ログ・個人メモは `local/` に保管。
+- ユーザーの明示指示でリポジトリを公開へ変更済み: https://github.com/ryuya0124/gemini-microg-patches
 - 署名キーを維持。パスワードはユーザーの指定により `local/SIGNING.md` に明記し、`.env` に設定済み。これらはGit対象外。
 
 ## 次に作業するとき
@@ -36,8 +37,8 @@
 - 3つのAPKを既存キーで署名し、apksignerによる検証成功。
 - 動作確認済みv8と再生成後のGoogle本体（15 DEX）・Geminiランチャー（4 DEX）のDEX内容が完全一致。
 - ShellCheckとactionlintでスクリプト・Actions定義の検証成功。
-- GitHub CIはアカウントの支払い／利用上限制限により起動前に停止。GitHub上での成功は未確認。詳細はdocs/automation.md。課金設定は変更していない。
-- Macのoriginを非公開リポジトリに設定済み。リポジトリ専用Deploy keyでfetch/pushする。秘密鍵はlocal/keys/github-deploy-ed25519、core.sshCommandはこのリポジトリ内だけに設定。アカウント全体の認証情報はコピーしていない。
+- GitHub CIは公開へ変更後も `The job was not started because your account is locked due to a billing issue.` で起動前に停止。実行ID 34036348013。GitHub上での成功は未確認。詳細はdocs/automation.md。課金設定は変更していない。
+- Macのoriginを上記リポジトリに設定済み。リポジトリ専用Deploy keyでfetch/pushする。秘密鍵はlocal/keys/github-deploy-ed25519、core.sshCommandはこのリポジトリ内だけに設定。アカウント全体の認証情報はコピーしていない。
 - 旧履歴はlocal-history-before-organizationブランチとbundleに保持。通常のgit pushはmainのみ。git push --allは実行しない。
 
 ## ローカルに保管した旧資料

@@ -39,6 +39,16 @@ GitHub Actionsはcommit SHAに固定し、Dependabotが月次で更新PRを作�
 
 ## 2026-09-06時点のGitHub側の実行制限
 
-初回CIはGitHubアカウント側の「recent account payments have failed or your spending limit needs to be increased」で起動前に停止した。ジョブ実行やコード検査に到達していない。課金設定は変更していない。
+初回の非公開リポジトリでのCIは支払い／利用上限制限で起動前に停止した。ユーザーの明示指示でリポジトリを公開へ変更して再実行したが、次のエラーで停止した。
 
-[該当する実行](https://github.com/ryuya0124/gemini-microg-patches/actions/runs/34036184259)のAnnotationsを参照。アカウントのBilling & plansで制限を解消した後、CIを手動実行する。MacでのShellCheck・actionlint・コンパイル・全APKビルド・DEX検証・署名は成功済み。
+> The job was not started because your account is locked due to a billing issue.
+
+[公開後の実行](https://github.com/ryuya0124/gemini-microg-patches/actions/runs/34036348013)のAnnotationsを参照。これはアカウント側のロックで、ジョブ内の検査やコンパイルには到達していない。課金設定は変更していない。
+
+アカウントのBilling & plansで問題を解消した後、Actions → CI → Run workflowを実行する。CLIの場合:
+
+```sh
+gh workflow run ci.yml --repo ryuya0124/gemini-microg-patches
+```
+
+MacでのShellCheck・actionlint・コンパイル・全APKビルド・DEX検証・署名は成功済み。GitHub上でのCI成功は未確認。
