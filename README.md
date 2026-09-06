@@ -69,7 +69,7 @@ Javaは `JAVA`、Kotlinは `KOTLINC`、SDKは `ANDROID_HOME`、署名ツール�
 - **Build APKs (manual)**: 手動実行で元APKを取得し、3つの未署名APKを生成・検証。入力URLのSecrets設定が必要です。
 - **Release patch bundle**: `v*` タグでパッチJARとチェックサムを含むドラフトReleaseを作成。
 
-**現在のGitHub側制約:** 公開リポジトリへの変更後も、アカウントの課金問題によるロックでCIは起動前に停止しています。Macでのビルド・検証・署名は成功済みです。詳細と再実行手順は[自動化ドキュメント](docs/automation.md)を参照してください。
+**GitHub CI確認済み:** スクリプト検査、パッチと検証ツールのコンパイル、Artifact保存まで成功しました。[実行結果](https://github.com/ryuya0124/gemini-microg-patches/actions/runs/34036990773)
 
 設定手順と通常CIが検証する範囲は [docs/automation.md](docs/automation.md) を参照してください。署名キーはMac内で管理し、ActionsのAPK成果物はローカルで署名します。
 

@@ -37,18 +37,16 @@ GitHub Actionsはcommit SHAに固定し、Dependabotが月次で更新PRを作�
 
 ツールや元APKを更新した場合はコンパイルだけでなく `scripts/build-all.sh` と実機ログイン・チャットを確認し、[HANDOFF.md](../HANDOFF.md)に結果を残す。
 
-## 2026-09-06時点のGitHub側の実行制限
+## 2026-09-06の実行確認
 
-初回の非公開リポジトリでのCIは支払い／利用上限制限で起動前に停止した。ユーザーの明示指示でリポジトリを公開へ変更して再実行したが、次のエラーで停止した。
+当初は課金問題によるアカウントロックでジョブが開始されなかったが、ユーザー依頼による再実行でCIが成功した。こちらでは課金設定を変更していない。
 
-> The job was not started because your account is locked due to a billing issue.
+[成功した実行](https://github.com/ryuya0124/gemini-microg-patches/actions/runs/34036990773)では、スクリプト検査、固定ツールの取得、パッチのコンパイル、APK検証ツールのコンパイル、パッチJARのArtifact保存まで確認済み。
 
-[公開後の実行](https://github.com/ryuya0124/gemini-microg-patches/actions/runs/34036348013)のAnnotationsを参照。これはアカウント側のロックで、ジョブ内の検査やコンパイルには到達していない。課金設定は変更していない。
+Macでは全APKビルド・DEX検証・署名も成功済み。通常CIは元APKを使用しないため、全APKビルドや実機ログインの代替にはならない。
 
-アカウントのBilling & plansで問題を解消した後、Actions → CI → Run workflowを実行する。CLIの場合:
+再実行はActions → CI → Run workflow、または以下のコマンドを使用する。
 
 ```sh
 gh workflow run ci.yml --repo ryuya0124/gemini-microg-patches
 ```
-
-MacでのShellCheck・actionlint・コンパイル・全APKビルド・DEX検証・署名は成功済み。GitHub上でのCI成功は未確認。
