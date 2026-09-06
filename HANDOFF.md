@@ -85,3 +85,7 @@
 - Release: https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.1.1
 - Release Actions実行34038918051でMPP生成・構造検証・版別定義の検証・公開に成功。
 - 配布物はMPP、patches-bundle.json、SHA256SUMS。Remote sourceの更新情報も0.1.1へ更新。
+
+## 新版のフック解析（2026-09-06）
+
+[解析ガイド](docs/hook-analysis.md) と [調査テンプレート](docs/templates/hook-investigation.md) を追加。`scripts/inspect-hooks.sh APK search SUBSTRING` で全DEXの参照を検索し、`dump` で完全記述子に一致するメソッドを表示できる。未知版の解析を許可するが、対応版登録やパッチ適用はしない。現行Google APKでエラー19の文字列からappk.kを再発見できることを確認。配布パッチの挙動は変更していない。

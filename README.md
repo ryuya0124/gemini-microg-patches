@@ -109,3 +109,5 @@ local/           署名キー・個人用メモ・旧作業資料（Git対象外
 ## 利用しているプロジェクト
 
 [Morphe Desktop](https://github.com/MorpheApp/morphe-desktop)、[Morphe patches](https://github.com/MorpheApp/morphe-patches)、[microG](https://github.com/microg/GmsCore)を利用しています。このリポジトリにはGoogleの元APK、署名キー、実機の生ログを含めません。
+
+更新時の探索方法・症状別の手掛かり・失敗例は [フック解析ガイド](docs/hook-analysis.md) を参照してください。`scripts/inspect-hooks.sh` で未知版のDEXも読み取り専用で検索できます。

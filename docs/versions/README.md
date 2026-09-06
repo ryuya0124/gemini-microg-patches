@@ -46,3 +46,7 @@ scripts/build-mpp.sh
 - エラー19、権限要求、プロセス判定の検証コードも共通定義を参照し、難読化名の二重管理を解消。
 
 CIは未登録版・異なるversionCodeの拒否、入力ハッシュと定義の整合性、生成JSONとの差分を検証します。検証コードは `scripts/kotlin/VerifyVersionProfiles.kt`。
+
+## フックが見つからない場合
+
+[フック解析ガイド](../hook-analysis.md) に文字列から候補を探す手順と今回の失敗例を記録しています。[調査テンプレート](../templates/hook-investigation.md) を版ごとに残してください。
