@@ -1,0 +1,56 @@
+# 引き継ぎメモ
+
+更新: 2026-09-06
+
+## 現在の状態
+
+- microGログイン修正とセキュアフォルダのエラー(19)回避を実装済み。
+- 通常領域: チャット「１＋１」→「2 です。」、「２＋２」→「4」を実機で確認。アプリ終了・再起動後もログインを維持。
+- セキュアフォルダ: user 150で `Work profile is allowed`、`Server eligibility response is ok`、`Robin is eligible` を確認し、その後ユーザーが利用成功を確認。
+- GitHub管理向けにソース・スクリプト・ドキュメントを整理。旧APK・ログ・個人メモは `local/` に保管。
+- 署名キーを維持。パスワードはユーザーの指定により `local/SIGNING.md` に明記し、`.env` に設定済み。これらはGit対象外。
+
+## 次に作業するとき
+
+1. [README.md](README.md) と [docs/architecture.md](docs/architecture.md) を読む。
+2. `git status --short` で他の作業の差分を確認する。
+3. `scripts/check-repo.sh`、`scripts/setup-tools.sh`、`scripts/compile-patches.sh` を実行する。
+4. APKに影響する変更では `scripts/build-all.sh`、`scripts/sign-apks.sh` を実行する。
+5. 端末を明示して `ADB_SERIAL=... scripts/install-device.sh`。Secure Folder内はユーザーが手動起動する。
+6. 実機結果と未確認事項をこのメモに追記する。生ログに含まれるトークンやアカウント情報はコミットしない。
+
+## 変更してはいけない前提
+
+- `Account Switch Lock Bypass`、`Account Sync Binder Loop Fix`、`Account ID Fallback for Clone` は無効のまま。固定AccountIdやBinder成功の偽装はログイン不能・同期ループの原因になった。
+- Dagger向けにはプロセス名から `.morphe` を除去するが、アカウントストアのmain-process判定は実際のプロセス名を使う。
+- microGのUI actionは転送し、互換Binder service actionは元名を維持する。
+- 権限要求の挿入位置はonCreate末尾ではない。末尾ではp0がActivity以外の値に上書きされる。
+- エラー19は `appk.k` の `appk.x:Z` を読む1命令だけ変更する。Android全体のmanaged-profile判定は変更しない。
+- 元APKのハッシュを検証する。別バージョンに対応するときは、難読化名と制御フローを再調査する。
+
+## 整理後の検証記録
+
+- JDK 21・固定Kotlin 2.4.10でGoogle本体、Geminiランチャー、xxhdpi splitを元APKから再生成。
+- MainActivityの分岐先検証成功。
+- エラー19修正が1命令で、レジスタ・命令幅・分岐オフセットを維持することを検証。
+- 3つのAPKを既存キーで署名し、apksignerによる検証成功。
+- 動作確認済みv8と再生成後のGoogle本体（15 DEX）・Geminiランチャー（4 DEX）のDEX内容が完全一致。
+- ShellCheckとactionlintでスクリプト・Actions定義の検証成功。
+- GitHub CIの結果はリポジトリのActions画面を参照。通常CIには元APKを渡さないため、実機動作の代替にはならない。
+
+## ローカルに保管した旧資料
+
+- `local/archive/before-organization.bundle`: 整理前のGit履歴。
+- `local/archive/before-organization.diff`: 整理前の未コミット差分。
+- `local/HANDOFF-private-history.md`: 以前の詳細調査メモと環境情報。
+- `local/archive/dist-v8-before-reorganization/`: ユーザー確認済みv8のAPK。
+- `local/archive/work/`: 途中の検証コード・ログ・ビルド。
+- `local/archive/authfix-result.json`: 他作業由来の結果をそのまま保管。
+
+旧Git履歴には署名パスワードを含むため、GitHubには整理後の新しい履歴を使用する。旧履歴をpushしない。
+
+## 未確認・制約
+
+- Gemini Live、音声、端末アシスタント設定、端末全体の再起動、他のGoogleバージョンは未確認。
+- Samsungでは `am start --user 150` が拒否される。インストール更新は可能だが、フォルダ内の起動は手動。
+- GeminiやGoogleのサーバー仕様変更によって利用できなくなる可能性は残る。
