@@ -36,7 +36,9 @@
 - 3つのAPKを既存キーで署名し、apksignerによる検証成功。
 - 動作確認済みv8と再生成後のGoogle本体（15 DEX）・Geminiランチャー（4 DEX）のDEX内容が完全一致。
 - ShellCheckとactionlintでスクリプト・Actions定義の検証成功。
-- GitHub CIの結果はリポジトリのActions画面を参照。通常CIには元APKを渡さないため、実機動作の代替にはならない。
+- GitHub CIはアカウントの支払い／利用上限制限により起動前に停止。GitHub上での成功は未確認。詳細はdocs/automation.md。課金設定は変更していない。
+- Macのoriginを非公開リポジトリに設定済み。リポジトリ専用Deploy keyでfetch/pushする。秘密鍵はlocal/keys/github-deploy-ed25519、core.sshCommandはこのリポジトリ内だけに設定。アカウント全体の認証情報はコピーしていない。
+- 旧履歴はlocal-history-before-organizationブランチとbundleに保持。通常のgit pushはmainのみ。git push --allは実行しない。
 
 ## ローカルに保管した旧資料
 

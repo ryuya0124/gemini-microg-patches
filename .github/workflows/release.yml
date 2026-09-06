@@ -22,5 +22,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          sha256sum build/gemini-patches.jar > build/SHA256SUMS
+          (cd build && sha256sum gemini-patches.jar > SHA256SUMS)
           gh release create "$RELEASE_TAG" build/gemini-patches.jar build/SHA256SUMS --verify-tag --draft --generate-notes

@@ -36,3 +36,9 @@ git push origin v0.1.0
 GitHub Actionsはcommit SHAに固定し、Dependabotが月次で更新PRを作る。Morphe/Kotlinは `config/tools.lock.json` のURL・バージョン・公式配布物のSHA-256を一緒に更新する。
 
 ツールや元APKを更新した場合はコンパイルだけでなく `scripts/build-all.sh` と実機ログイン・チャットを確認し、[HANDOFF.md](../HANDOFF.md)に結果を残す。
+
+## 2026-09-06時点のGitHub側の実行制限
+
+初回CIはGitHubアカウント側の「recent account payments have failed or your spending limit needs to be increased」で起動前に停止した。ジョブ実行やコード検査に到達していない。課金設定は変更していない。
+
+[該当する実行](https://github.com/ryuya0124/gemini-microg-patches/actions/runs/34036184259)のAnnotationsを参照。アカウントのBilling & plansで制限を解消した後、CIを手動実行する。MacでのShellCheck・actionlint・コンパイル・全APKビルド・DEX検証・署名は成功済み。
