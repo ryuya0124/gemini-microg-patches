@@ -4,6 +4,14 @@ microGを使い、通常領域とSamsungセキュアフォルダでGeminiを動�
 
 **動作確認済み:** Google `17.54.18.ve.arm64`、microG `7.0.0`、SM-S948Qの通常領域とセキュアフォルダ（user 150）。2026-09-06にセキュアフォルダでの利用成功をユーザーが確認しました。
 
+## Morpheに追加
+
+[最新リリース](https://github.com/ryuya0124/gemini-microg-patches/releases/latest)から `.mpp` をダウンロードしてSources → Localで追加できます。
+
+[Morpheにソースを追加](https://morphe.software/add-source?github=ryuya0124/gemini-microg-patches)、またはSources → RemoteにこのリポジトリのURLを入力してください。更新情報はルートの `patches-bundle.json` で配信します。
+
+独自パッチに加えて、公式Morphe patches 1.41.0の **Clone app** とオプション `updatePermissions=true`、`updateProviders=true` が必要です。ManagerではExpert modeで選択します。Googleのxxhdpi splitの変換・同じキーでの署名まで再現する場合は、下記のローカルスクリプトを使用してください。
+
 ## できること
 
 - Geminiからクローン版Googleアプリを起動
@@ -54,20 +62,23 @@ ADB_SERIAL=端末のIP:ポート scripts/install-device.sh
 | --- | --- |
 | `scripts/setup-tools.sh` | 固定バージョンの依存ツール取得・SHA-256検証 |
 | `scripts/check-repo.sh` | Bash・ShellCheck・管理対象ファイルの検査 |
-| `scripts/compile-patches.sh` | 元APKなしでパッチJARをコンパイル |
+| `scripts/compile-patches.sh` | Desktop向け中間JARをコンパイル |
+| `scripts/build-mpp.sh` | JVMクラス・Android DEX・Manifest入りの配布用MPPを生成・検証 |
 | `scripts/build-google.sh` | Google本体のパッチ適用とDEX検証 |
 | `scripts/build-all.sh` | Google・Geminiランチャー・splitを元APKから生成 |
 | `scripts/verify-apks.sh` | Google本体のDEX検証を再実行 |
 | `scripts/sign-apks.sh` | 3つのAPKを同じキーで署名・検証 |
 | `scripts/install-device.sh` | 明示したADB接続先へデータを保持して更新 |
 
+MPPの生成にはAndroid SDKの `platforms;android-36` も必要です。R8/D8 9.4.17はsetup-tools.shがハッシュ検証して取得します。
+
 Javaは `JAVA`、Kotlinは `KOTLINC`、SDKは `ANDROID_HOME`、署名ツールは `APKSIGNER`、ADBは `ADB` で上書きできます。通常領域を自動起動する場合は `LAUNCH=1 ANDROID_USER=0` を追加します。
 
 ## GitHub Actions
 
-- **CI**: push / PRでスクリプト検査とKotlinコンパイル。パッチJARをArtifactに保存。
+- **CI**: push / PRでスクリプト検査とKotlinコンパイル。配布用MPPとメタデータ・チェックサムをArtifactに保存。
 - **Build APKs (manual)**: 手動実行で元APKを取得し、3つの未署名APKを生成・検証。入力URLのSecrets設定が必要です。
-- **Release patch bundle**: `v*` タグでパッチJARとチェックサムを含むドラフトReleaseを作成。
+- **Release patch bundle**: `v*` タグでMPP・ソースメタデータ・チェックサムを含むReleaseを公開。
 
 **GitHub CI確認済み:** スクリプト検査、パッチと検証ツールのコンパイル、Artifact保存まで成功しました。[実行結果](https://github.com/ryuya0124/gemini-microg-patches/actions/runs/34036990773)
 

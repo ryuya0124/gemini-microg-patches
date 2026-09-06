@@ -16,11 +16,15 @@ jobs:
           java-version: '21'
       - run: scripts/check-repo.sh
       - run: scripts/setup-tools.sh
-      - run: scripts/compile-patches.sh
-      - name: Create draft release
+      - name: Ensure Android API library
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36"'
+      - run: scripts/build-mpp.sh
+      - name: Publish Morphe release
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          (cd build && sha256sum gemini-patches.jar > SHA256SUMS)
-          gh release create "$RELEASE_TAG" build/gemini-patches.jar build/SHA256SUMS --verify-tag --draft --generate-notes
+          version="$(python3 -c 'import json; print(json.load(open("patches-bundle.json"))["version"])')"
+          test "$RELEASE_TAG" = "v$version"
+          test -f "docs/releases/$RELEASE_TAG.md"
+          gh release create "$RELEASE_TAG" "build/release/gemini-microg-patches-$version.mpp" build/release/patches-bundle.json build/release/SHA256SUMS --verify-tag --title "Gemini microG patches $RELEASE_TAG" --notes-file "docs/releases/$RELEASE_TAG.md"

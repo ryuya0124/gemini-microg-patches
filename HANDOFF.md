@@ -57,3 +57,11 @@
 - Gemini Live、音声、端末アシスタント設定、端末全体の再起動、他のGoogleバージョンは未確認。
 - Samsungでは `am start --user 150` が拒否される。インストール更新は可能だが、フォルダ内の起動は手動。
 - GeminiやGoogleのサーバー仕様変更によって利用できなくなる可能性は残る。
+
+## MPP配布対応（2026-09-06）
+
+- 中間JARだけの配布を修正し、scripts/build-mpp.shでAndroid DEXとManifest情報を含む正式なMPPを生成。
+- R8/D8 9.4.17をSHA-256固定。SDK Build Tools 36.0.0内蔵D8はKotlin 2.4のmetadataを処理できなかったため使用しない。
+- VerifyMpp.ktが全JVMクラスのDEX収録とManifestを検証し、Morphe Desktopのlist-patchesでも読み込む。
+- patches-bundle.jsonでRemote sourceを登録可能。Clone appは公式ソース側で別途有効にする必要がある。
+- v0.1.0のReleaseを準備。Manager上での全パッチ適用操作は未確認。APK生成は既存のローカルスクリプトで検証済み。

@@ -16,5 +16,11 @@
     "url": "https://github.com/JetBrains/kotlin/releases/download/v2.4.10/kotlin-compiler-2.4.10.zip",
     "sha256": "473dd66c7a3ef4b182065b3da670466c1bf2773a9dbb0ed8b33a39fe9d4f876d",
     "file": "kotlin-compiler.zip"
+  },
+  "r8": {
+    "version": "9.4.17",
+    "url": "https://dl.google.com/dl/android/maven2/com/android/tools/r8/9.4.17/r8-9.4.17.jar",
+    "sha256": "2100511344497f041644a4d63fb7be8a516ce9bace30b7d17ab27cc93a0e58d4",
+    "file": "r8.jar"
   }
 }

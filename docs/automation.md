@@ -2,7 +2,7 @@
 
 ## 通常CI
 
-`ci.yml` はmainへのpush、PR、手動実行で動く。JDK 21とハッシュ固定のKotlin/Morpheを使用して、シェル検査・管理対象ファイルの検査・パッチと検証ツールのコンパイルを行う。
+`ci.yml` はmainへのpush、PR、手動実行で動く。JDK 21とハッシュ固定のKotlin/Morpheを使用して、シェル検査・管理対象ファイルの検査・パッチと検証ツールのコンパイル、配布用MPPのDEX・Manifest検証とDesktop読み込みを行う。
 
 元APK・署名キー・実機接続は不要。成果物 `gemini-patches-<commit>` は14日保存される。通常CIの成功はAPK適用や実機ログインを保証しない。
 
@@ -22,14 +22,20 @@ Actions画面から実行すると、未署名APK3つ、パッチJAR、パッチ
 
 ## リリース
 
-実機検証後、バージョンタグをpushするとドラフトReleaseが作られる。
+バージョンメタデータとリリースノートを準備し、MPPを検証してコミットする。そのコミットにバージョンタグをpushするとReleaseが公開される。
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+python3 scripts/prepare-release.py 0.2.0
+# docs/releases/v0.2.0.md を作成
+scripts/build-mpp.sh
+git add patches-bundle.json docs/releases/v0.2.0.md
+git commit -m "chore: prepare v0.2.0"
+git push origin main
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-ドラフトにはパッチJARとSHA256SUMSを添付する。APKは添付しない。既存タグの再実行時は既存Releaseを確認すること。
+Releaseには `gemini-microg-patches-<version>.mpp`、`patches-bundle.json`、`SHA256SUMS` を添付する。タグとメタデータのバージョンが違う場合は停止する。APKや中間JARは添付しない。既存タグの再実行時は既存Releaseを確認すること。
 
 ## 依存更新
 

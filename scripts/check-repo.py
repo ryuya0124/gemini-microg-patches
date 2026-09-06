@@ -7,7 +7,7 @@ import subprocess
 root = Path(__file__).resolve().parents[1]
 lock = json.loads((root / 'config/tools.lock.json').read_text())
 for item in lock.values():
-    assert item['url'].startswith('https://github.com/')
+    assert item['url'].startswith(('https://github.com/', 'https://dl.google.com/dl/android/maven2/'))
     assert re.fullmatch(r'[0-9a-f]{64}', item['sha256'])
     assert Path(item['file']).name == item['file']
 tracked = subprocess.check_output(['git', 'ls-files', '-z'], cwd=root).decode().split('\0')

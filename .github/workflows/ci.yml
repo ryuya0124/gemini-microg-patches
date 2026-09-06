@@ -23,8 +23,10 @@ jobs:
         run: scripts/check-repo.sh
       - name: Install pinned tools
         run: scripts/setup-tools.sh
-      - name: Compile patches
-        run: scripts/compile-patches.sh
+      - name: Ensure Android API library
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36"'
+      - name: Build and verify Morphe bundle
+        run: scripts/build-mpp.sh
       - name: Compile APK verification tools
         run: |
           for source in scripts/kotlin/*.kt; do
@@ -33,6 +35,6 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: gemini-patches-${{ github.sha }}
-          path: build/gemini-patches.jar
+          path: build/release/*
           if-no-files-found: error
           retention-days: 14
