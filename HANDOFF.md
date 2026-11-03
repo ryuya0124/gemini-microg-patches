@@ -89,3 +89,14 @@
 ## 新版のフック解析（2026-09-06）
 
 [解析ガイド](docs/hook-analysis.md) と [調査テンプレート](docs/templates/hook-investigation.md) を追加。`scripts/inspect-hooks.sh APK search SUBSTRING` で全DEXの参照を検索し、`dump` で完全記述子に一致するメソッドを表示できる。未知版の解析を許可するが、対応版登録やパッチ適用はしない。現行Google APKでエラー19の文字列からappk.kを再発見できることを確認。配布パッチの挙動は変更していない。
+
+## 2026-11-03更新（最新）
+
+- 読み取り可能なMac作業先: `/Users/Shared/GeminiPatch-20261103/repo`。以前のDocumentsはSSHの権限で読めず、GitHubからcloneして再開した。
+- Google 17.70.11.ve.arm64 / code 301827586、Gemini 1.0.995038376 / code 345を端末から抽出して対応。追加のLens/tclib動的feature splitは抽出・保管のみで、配布セットは従来と同じbase+xxhdpi。未検証機能は未対応と判断する。
+- microGは7.3.0。user 150でGoogleのUncertifiedDeviceActivity起動を確認し、ローカル転送分岐を1命令変更。端末認定の偽装ではない。
+- 古い署名キーが不明なため、ユーザーの指示でGoogle/Geminiクローンだけをアンインストールし、新キーでuser 150へ再インストール。microGと元アプリは維持。
+- 新キーの保管先: Windows `B:\Androidアプリ 署名鍵\Gemini microG patches`。`gemini-release.p12`、`password`、`署名情報.txt`、`restore-map.json`。秘密鍵の再インポートとバックアップのSHA一致を確認。今後はこのキーを使う。パスワードは公開資料へ書かない。
+- Macの`.env`と`local/keys/`にも設定済み。これらはGit対象外。Bドライブには日付サブフォルダを作らずアプリ単位で保管する既存規則に従った。
+- DEX分岐、資格判定の1命令差分、警告分岐の1命令差分、MPP構造を検証。ユーザーがセキュアフォルダで警告消失とチャット成功を確認。通常領域・強制停止・端末再起動は新版で未再検証。
+- 探索はビルド時のみ。将来DexKitを実行時導入する場合の初回/更新後だけのキャッシュ方針はdocs/hook-analysis.mdに記載。

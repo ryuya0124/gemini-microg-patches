@@ -53,3 +53,15 @@ JADXが使える環境では `jadx -r --show-bad-code --no-inline-anonymous --no
 5. 調査記録、HANDOFF、リリースノートを更新し、CIとReleaseの完了を確認する。
 
 実機ログは現在のUID/PIDを取得して絞り、`local/` に保存する。user 150やUIDは別端末へ固定値で流用しない。`logcat -t` は全体の末尾件数を先に制限するため、目的のログを取りこぼし得る。セキュアフォルダではADB起動やUI取得が制限されることがあり、利用者の手動操作で確認する。UI dump失敗後の古いXMLを現在画面と判断しない。生ログにはアカウントや認証トークンが含まれるため、公開するメモは必要な文言だけを抜粋・匿名化する。
+
+## 2026-11-03: 認定警告と新版の差分
+
+Google 17.54.18のuser 150イベントログで `com.google.android.gms.gmscompliance.ui.UncertifiedDeviceActivity` の起動を確認。新版17.70.11ではログ `Redirecting to UncertifiedDeviceActivity.` から `Ldsuz;->invoke()Ljava/lang/Object;` を発見した（旧版はLdkww）。INSTANCE_OF直後のIF_NEZを、同じ幅・同じ分岐先のGOTO_16に変更し、警告画面の起動と元画面のfinishだけを飛ばす。端末のPlay Protect認定状態やサーバー側の完全性判定は変更しない。`VerifyCompliance.kt` で命令数・幅・分岐先・参照の保持と変更1箇所を検証する。
+
+新版はtrampolineのskipログが消え、対象がajis.t、条件v13、適用1箇所になった。MainActivityは13→22レジスタで、p0はinvokeの短形式に収まらない。末尾の完了フラグ書込み時点のActivity別名v0を使用し、後続で使うv3/v19を保持する。プロセス名プロバイダeipn.bは戻り箇所が1個。資格判定はaqtv.kのx:Z。新版のJSONと調査記録も参照。
+
+### 自動探索とキャッシュの方針
+
+現在はMorpheのFingerprint/DEX検索で**パッチ生成時**に探索し、アプリ起動時に探索しない。文字列・引数/戻り値・参照先・分岐構造・期待件数を組み合わせ、版別の観測値とも照合する。難読化名だけが変わっても候補探索できるが、制御フロー変更は別途検証が必要。
+
+[DexKit](https://github.com/LuckyPray/DexKit)も同種の複合探索を提供する。現時点では組み込んでいない。将来端末側に導入する場合は、初回起動またはAPK更新後の初回起動だけ探索する。APKのSHA-256（splitを使う場合はそれらも含む）・探索ルール版をキャッシュキーとし、同一キーでは探索しない。キーが変われば再探索し、0件/複数件ならフックせず停止して結果を記録する。更新前のキャッシュを無条件に流用しない。
