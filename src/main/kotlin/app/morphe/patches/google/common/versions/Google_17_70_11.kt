@@ -16,9 +16,14 @@ val google177011 = AppVersionProfile(
     ),
     validation = listOf(
         "2026-11-03: extracted installed original APK from SM-S948Q; DEX targets inspected",
-        "2026-11-03: new signing key, user 150 reinstall succeeded; user confirmed warning-free chat. Force-stop/reboot not re-tested."
+        "2026-11-03: new signing key, user 150 reinstall succeeded; local feature-disabled path restored components; user then confirmed chat send/response. Force-stop/reboot not re-tested."
     ),
     hooks = mapOf(
+        HookId.DEVICE_COMPLIANCE_FEATURE to TargetSpec(
+            className = "Ldsvb;", methodName = "a", methodDescriptor = "(Lhgpk;Lhgpk;)V",
+            anchorStrings = listOf("Checking for device compliance...", "Feature is disabled!"), expectedMatches = 1,
+            description = "Select existing feature-disabled path, including native component-reset recovery. Server integrity state unchanged."
+        ),
         HookId.DEVICE_COMPLIANCE_REDIRECT to TargetSpec(
             className = "Ldsuz;", methodName = "invoke", methodDescriptor = "()Ljava/lang/Object;",
             anchorStrings = listOf("Redirecting to UncertifiedDeviceActivity."), expectedMatches = 1,

@@ -20,6 +20,11 @@ val google175418 = AppVersionProfile(
         "MainActivity branches and appk.k single-instruction replacement verified"
     ),
     hooks = mapOf(
+        HookId.DEVICE_COMPLIANCE_FEATURE to TargetSpec(
+            className = "Ldkwy;", methodName = "a", methodDescriptor = "(Lgtks;Lgtks;)V",
+            anchorStrings = listOf("Checking for device compliance...", "Feature is disabled!"), expectedMatches = 1,
+            description = "Select existing feature-disabled path, including native component-reset recovery. Server integrity state unchanged."
+        ),
         HookId.DEVICE_COMPLIANCE_REDIRECT to TargetSpec(
             className = "Ldkww;", methodName = "invoke", methodDescriptor = "()Ljava/lang/Object;",
             anchorStrings = listOf("Redirecting to UncertifiedDeviceActivity."), expectedMatches = 1,

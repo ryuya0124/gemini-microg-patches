@@ -8,6 +8,7 @@ import app.morphe.patches.google.common.versions.gemini10958859967
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 enum class HookId(val displayName: String) {
+    DEVICE_COMPLIANCE_FEATURE("microGローカル機能無効化の停止"),
     DEVICE_COMPLIANCE_REDIRECT("microG認定画面への転送抑止"),
     WORK_PROFILE_BYPASS("Work Profile 制限バイパス"),
     WORK_PROFILE_ELIGIBILITY("Work Profile 利用資格"),

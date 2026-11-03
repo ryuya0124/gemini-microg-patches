@@ -98,5 +98,13 @@
 - 古い署名キーが不明なため、ユーザーの指示でGoogle/Geminiクローンだけをアンインストールし、新キーでuser 150へ再インストール。microGと元アプリは維持。
 - 新キーの保管先: Windows `B:\Androidアプリ 署名鍵\Gemini microG patches`。`gemini-release.p12`、`password`、`署名情報.txt`、`restore-map.json`。秘密鍵の再インポートとバックアップのSHA一致を確認。今後はこのキーを使う。パスワードは公開資料へ書かない。
 - Macの`.env`と`local/keys/`にも設定済み。これらはGit対象外。Bドライブには日付サブフォルダを作らずアプリ単位で保管する既存規則に従った。
-- DEX分岐、資格判定の1命令差分、警告分岐の1命令差分、MPP構造を検証。ユーザーがセキュアフォルダで警告消失とチャット成功を確認。通常領域・強制停止・端末再起動は新版で未再検証。
+- DEX分岐、資格判定の1命令差分、警告分岐の1命令差分、MPP構造を検証。ユーザーがセキュアフォルダで警告消失・内部サービス復旧後のチャット送受信を確認。通常領域・強制停止・端末再起動は新版で未再検証。
 - 探索はビルド時のみ。将来DexKitを実行時導入する場合の初回/更新後だけのキャッシュ方針はdocs/hook-analysis.mdに記載。
+
+### 送信失敗の追記
+
+初回の「できた」は起動確認だった。チャット成功の記録を訂正。送信時にUNIMPLEMENTED: InteractorProcessEndpointService bindService returned falseを確認し、user 150のdisabledComponentsにも同サービスが入っていた。警告転送だけの修正では不十分。Checking for device compliance...の既存feature-disabled分岐を選び、元のcomponent-reset復旧処理を通す修正を追加。検証完了までv0.2.0タグを公開しない。
+
+### 送信失敗の解決確認
+
+追加修正版を同じ新キーで上書きし、既存feature-disabled経路の復旧ログ、内部サービスのdisabledComponentsからの消失を確認。ユーザーに改めて送信・返答を依頼し「できた」と確認済み。最初の起動確認と混同しない。通常領域・端末再起動・音声/Liveは今回未再検証。
