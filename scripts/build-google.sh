@@ -5,8 +5,7 @@ source "$(dirname "$0")/lib/common.sh"
 "$ROOT/scripts/compile-patches.sh"
 require_file "$PATCHES"
 cd "$BUILD_DIR"
-"$JAVA" -Xmx6g -jar "$MORPHE" patch "$ROOT/inputs/google-base.apk" \
+"$ROOT/scripts/patch-apk.sh" "$ROOT/inputs/google-base.apk" "$BUILD_DIR/google-login-unsigned.apk" "$BUILD_DIR/google-patch-result.json" \
   -p "$BUILD_DIR/gemini-patches.jar" -p "$PATCHES" \
-  -e 'Clone app' -O updatePermissions=true -O updateProviders=true \
-  --unsigned -o "$BUILD_DIR/google-login-unsigned.apk" -r "$BUILD_DIR/google-patch-result.json"
+  -e 'Clone app' -O packageName=Default -O updatePermissions=true -O updateProviders=true
 "$ROOT/scripts/verify-apks.sh"

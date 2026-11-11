@@ -119,3 +119,22 @@
 - プロセス名探索では定数文字列googleappを返す別ヘルパーを除外。版別完全記述子に一致する本物のプロセス名取得関数だけを選択する。
 - キーは既存のlocal/keys/gemini-release.p12を維持。バックアップはBドライブの既存アプリ別フォルダを維持。
 - 入力ハッシュ/版定義/DEX分岐・資格判定・認定チェック・trampoline/Manifestを検証。実機更新をuser 150へ実施し、利用者の確認待ち。
+
+## 2026-11-12: Issue #8（最新）
+
+- 公式Clone appの名前・権限/Provider設定を明記し、Google/Geminiの許可参照を宣言済み権限に限って同じクローン名前空間へ補正。宣言そのものは公式Clone appがfinalizeで変更するため、こちらで先に変更して二重.morphe化しない。
+- APKの固定packageName、permission宣言とprotectionLevel、Manifest/DEX参照、Provider競合をビルド・署名・インストール前に検証。
+- default=falseの失敗実験3パッチは、HookIdのenabled=falseを実行時にも強制し、選択時に理由付きで停止。
+- パッチ失敗時にMorpheの終了コードだけを信用しない。fresh出力とresult JSONを検証し、前回成功APKを失敗結果で置き換えない。
+- 専用API36 Google APIsエミュレータで、元Googleが存在して権限を所有する条件から重複インストール失敗を再現。ユーザー削除後も失敗することを確認し復元。v0.3.0のLens許可参照不足と修正版の解消、元Google無効時の改造Googleへの起動を確認。adb root/suは未使用。詳細はdocs/testing/issue-8-emulator.md。
+- 構成違い3ケースを拒否、失敗実験3つを停止、既存出力を維持するテストが成功。Manager内で外部ソースのオプションを強制する機能ではないため、英語手順を守る必要がある。
+- エミュレータはアカウント未登録。チャット・実際のLens処理・OnePlus8実機/API31の動作を確認したという意味ではない。現行入力のminSdk=32は維持。
+- 新たな署名キーは作成していない。Bドライブの既存キーとMacの.envを維持。Issueへの返信/クローズはしていない。
+
+### リリース前の追加クラッシュ修正
+
+エミュレータ画面の追加確認でGoogle (Morphe) keeps stoppingを検出。元のプロセス名補正がlabel付きreturnの手前への挿入だったため、キャッシュ済みIF_NEZが補正を飛び越えていた。RETURN_OBJECTを補正の先頭命令に置換し、ラベルを保持して解消。
+
+ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/キャッシュ/seeded cacheの差を検証。旧版の未補正キャッシュとwidget receiverのClassCastExceptionを再現し、修正版の正常化とクラッシュ消失を確認。最終26項目+設定9項目が成功。保護されたAPPWIDGET_UPDATEは偽装せず、同じexported receiverのDI入口へ無害な独自actionを明示送信する。
+
+公開前の最終証拠はlocal/issue8/emulator-verified/。スクリーンショットはログイン待ち画面（アカウント未登録）で、エラーのDownload Google画面でもクラッシュダイアログでもない。チャット/Lensの実処理を検証した意味ではない。

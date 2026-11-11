@@ -5,6 +5,8 @@ source "$(dirname "$0")/lib/common.sh"
 ADB="${ADB:-$ANDROID_HOME/platform-tools/adb}"
 [[ -x "$ADB" ]] || fail 'Set ADB or install Android SDK platform-tools.'
 for name in google-login split_config.xxhdpi gemini-login; do require_file "$DIST_DIR/$name.apk"; done
+"$ROOT/scripts/verify-clone-contract.sh" "$ROOT/inputs/google-base.apk" "$DIST_DIR/google-login.apk"
+"$ROOT/scripts/verify-clone-contract.sh" "$ROOT/inputs/gemini-base.apk" "$DIST_DIR/gemini-login.apk"
 "$ADB" -s "$ADB_SERIAL" get-state
 "$ADB" -s "$ADB_SERIAL" install-multiple --no-incremental -r "$DIST_DIR/google-login.apk" "$DIST_DIR/split_config.xxhdpi.apk"
 "$ADB" -s "$ADB_SERIAL" install --no-incremental -r "$DIST_DIR/gemini-login.apk"

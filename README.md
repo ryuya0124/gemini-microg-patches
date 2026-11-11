@@ -4,6 +4,12 @@ microGを使い、通常領域とSamsungセキュアフォルダでGeminiを動�
 
 **動作確認済み:** Google `17.70.11.ve.arm64`、Gemini `1.0.995038376`、microG `7.3.0`。2026-11-03にSM-S948Qのセキュアフォルダで認定警告の解消・内部サービス復旧後のチャット送受信をユーザーが確認。通常領域は新版で未再検証。
 
+## Setup / installation (English)
+
+**Read [Supported setup](docs/setup-en.md) before patching.** Use official Clone app with `packageName=Default`, `updatePermissions=true`, `updateProviders=true`. Do not select the three historical account experiments. The current Google/Gemini pair requires Android 12L / API 32 or newer; standard Android 12 / API 31 is unsupported by these inputs.
+
+Issue #8 reproduction and the verified fix are recorded in [the emulator regression report](docs/testing/issue-8-emulator.md).
+
 ## Morpheに追加
 
 [最新リリース](https://github.com/ryuya0124/gemini-microg-patches/releases/latest)から `.mpp` をダウンロードしてSources → Localで追加できます。
@@ -117,3 +123,5 @@ local/           署名キー・個人用メモ・旧作業資料（Git対象外
 更新時の探索方法・症状別の手掛かり・失敗例は [フック解析ガイド](docs/hook-analysis.md) を参照してください。`scripts/inspect-hooks.sh` で未知版のDEXも読み取り専用で検索できます。
 
 新版の解析には [DexKit探索ツール](analysis/dexkit/README.md) を利用できます。`scripts/setup-dexkit.sh` の後、`scripts/discover-hooks.sh APK` で候補を抽出し、同じ入力の再探索はキャッシュで省略します。
+
+クローンの出力検証には `scripts/verify-clone-contract.sh 元APK 生成APK` を使用できます。標準ビルド・署名・インストールの各段階でも実行します。Manager自体にこのCLI検証が組み込まれるわけではありません。
