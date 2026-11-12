@@ -195,3 +195,10 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - 既存回帰はDesktop生成で各API26項目、Managerの旧VerifyError比較16項目、MPP設定11項目が成功。静的検査へVerifyPermissionSetupを追加。MPP内26パッチクラスと2ランタイムクラスを検証し、JDK21/24のランタイムDEX一致も確認。
 - 実機にはインストールや設定変更をしていない。アカウント未登録AVDの検証であり、チャット/認証成功や投稿者の実機結果とは区別する。詳細・ハッシュ・コマンド・テストハーネスの修正理由は [権限UI検証記録](docs/testing/issue-8-permission-ui.md)。ローカル証拠はlocal/issue8/permission-ui/。
 - リリース本文は利用者の指示どおり変更点/修正点の2項目のみ。内部実装とテスト結果は本文に含めない。公開・返信の結果は次の追記へ記録する。
+
+### v0.3.4公開・返信完了
+
+- コードcommit `19370b98adfd825ba7aa0c45809c06642adaf239` のCI `43225699248` とRelease `43226055432` が成功。[v0.3.4](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.4) を公開。
+- 公開MPPをダウンロードして検証済みMPPと照合。173574 bytes、SHA256 `3958947638c8ecebe6f9752a4395dd4e24c2a55da88b7c1a1a4de956e0ac0393` で完全一致。公開SHA256SUMSのMPP/更新JSONも一致。本文は変更点2項目だけになっていることを確認。
+- [Issue返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6824765654) で権限の用途・事前説明・拒否後の再要求抑止を短く案内。システム文言自体は変わらないことを明記。Issueを閉じる操作は行っていない。
+- 専用AVD2台は名前を確認して停止。実機接続やADBサーバーは停止せず、実機アプリも変更していない。証拠はMacのlocal/issue8/permission-uiとWindowsのoutputsへ保存。
