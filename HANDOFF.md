@@ -164,4 +164,4 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - SM-S948Q / Android17のSecure Folder user150にGoogle/Gemini修正版を-r更新済み。Google base+xxhdpiは同一PackageInstallerセッション。インストール済み3APKのSHA256・既存署名を照合し一致。
 - LensServiceは `com.google.android.googlequicksearchbox.morphe.permission.LENS_SERVICE` を要求する状態へ修正済み。user150のCE/DE領域を維持し、user0/10は未導入のまま。OS/SystemUI識別・SELinux状態も維持。
 - Samsungがshellのcross-userアクセスを拒否したため、このSecure Folderへの自動更新では許可済みroot PackageInstallerを使用。通常ユーザーでのエミュレータインストールはshell UID2000で確認済み。
-- 一時APKと所有したleaseを解放。親も `local/issue8/auto-clone/device-update/RESULT.md` と `verified-summary.json` を照合。ログイン/チャットはユーザー確認待ち。秘密の端末識別子・生ログはGitへ含めない。
+- 一時APKと所有したleaseを解放。親も `local/issue8/auto-clone/device-update/RESULT.md` と `verified-summary.json` を照合。更新後、利用者がログイン状態の維持とチャット返答成功を「返答できた」と確認。自動照合結果と利用者の動作確認を区別して記録。秘密の端末識別子・生ログはGitへ含めない。

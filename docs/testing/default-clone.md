@@ -27,7 +27,7 @@ These are actual APK patch/install/runtime checks using the Morphe Desktop/Patch
 
 The same signed default builds were applied with data-preserving updates to Google/Gemini in Secure Folder user150 on SM-S948Q / Android17. The 3 installed APK hashes and existing certificate matched the supplied builds. LensService requires the cloned permission; user150 CE/DE data directories and the user0/10 installation state were preserved. The OS and SystemUI were not restarted. Temporary APKs and the exclusive device lease were removed afterward.
 
-Samsung refused shell cross-user access for this profile-specific deployment, so its PackageInstaller sessions used the already authorized root connection. The regular-user emulator installations above used shell UID2000. Physical app launch/login/chat await the user's check. Deployment evidence is local-only in `local/issue8/auto-clone/device-update/`.
+Samsung refused shell cross-user access for this profile-specific deployment, so its PackageInstaller sessions used the already authorized root connection. The regular-user emulator installations above used shell UID2000. After the update, the user confirmed that Gemini remained signed in and returned a chat reply. This user confirmation is separate from the automated APK/data checks. Deployment evidence is local-only in `local/issue8/auto-clone/device-update/`.
 
 ## Reproduction and local records
 
