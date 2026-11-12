@@ -175,3 +175,9 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - Desktop生成のAPI31/API36も各26項目、MPP設定11項目を再実行し成功。MPPは26クラスをAndroid DEXへ収録。今回はアカウント未登録のエミュレータでの検証で、実機チャット確認はv0.3.2のまま。
 - 詳細・原本ハッシュ参照・実GUI手順・生成APKハッシュ・コマンドは [docs/testing/issue-8-manager-registers.md](docs/testing/issue-8-manager-registers.md)。ローカル証拠は `local/issue8/register-fix/`。今後Patcher更新ではDesktop生成APKの実行だけで済ませず、実Android Managerでの生成を比較する。
 - Issueへ短い原因説明を返信済み。自動closeはしない。リリース後の返信・公開結果は次の追記へ記録する。
+
+### v0.3.3公開・返信完了
+
+- コードcommit `691092193ab07f26faabd216fb1ac0fd646846b0` のCI `43202588258`、Release `43202870466` が成功。タグv0.3.3と [Release](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.3) を公開。
+- 公開MPPをダウンロードして照合。SHA256 `c7b72128b63f6f4e91b0da79dcb56200dd5369f1380bfb57d14987aebe6a929c`、171035 bytesで、実Android Managerに読み込ませて検証したMPPと完全一致。CI生成物も全29 ZIPエントリが一致。
+- Issue #8へ [短い返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6821468926) を投稿。Android12で再現と解消を確認済みと伝え、ソース更新・原本Google APKの標準選択での再パッチを案内。Issueは閉じていない。投稿者の実機での結果は未確認。
