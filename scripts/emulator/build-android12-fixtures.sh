@@ -21,8 +21,7 @@ for name in google gemini; do
   input="$google"
   [[ "$name" != gemini ]] || input="$gemini"
   "$ROOT/scripts/patch-apk.sh" "$input" "$fixture/$name-login-unsigned.apk" "$fixture/$name.json" \
-    -p "$BUILD_DIR/gemini-patches.jar" -p "$PATCHES" -e 'Clone app' \
-    -O packageName=Default -O updatePermissions=true -O updateProviders=true
+    -p "$BUILD_DIR/gemini-patches.jar"
   "$ROOT/scripts/verify-clone-contract.sh" "$input" "$fixture/$name-login-unsigned.apk"
 done
 "$ROOT/scripts/patch-apk.sh" "$google" "$fixture/baseline-unsigned.apk" "$fixture/baseline.json" \

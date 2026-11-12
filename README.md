@@ -6,7 +6,7 @@ microGを使い、通常領域とSamsungセキュアフォルダでGeminiを動�
 
 ## Setup / installation (English)
 
-**Read [Supported setup](docs/setup-en.md) before patching.** Use official Clone app with `packageName=Default`, `updatePermissions=true`, `updateProviders=true`. Do not select the three historical account experiments. Choose the correct APK variant: the default local inputs require API 32, while the same app versions also have Google API 30 and Gemini API 29 variants suitable for Android 12 installation.
+**Use v0.3.2 or newer and keep the default patch selection.** `Automatic Clone Setup` handles package, permission and provider isolation; official Clone app, Expert mode and custom options are unnecessary. Read [Supported setup](docs/setup-en.md) for the input variants. Do not select the three historical account experiments.
 
 Issue #8 reproduction and the verified fix are recorded in [the emulator regression report](docs/testing/issue-8-emulator.md).
 
@@ -16,7 +16,7 @@ Issue #8 reproduction and the verified fix are recorded in [the emulator regress
 
 [Morpheにソースを追加](https://morphe.software/add-source?github=ryuya0124/gemini-microg-patches)、またはSources → RemoteにこのリポジトリのURLを入力してください。更新情報はルートの `patches-bundle.json` で配信します。
 
-独自パッチに加えて、公式Morphe patches 1.41.0の **Clone app** とオプション `updatePermissions=true`、`updateProviders=true` が必要です。ManagerではExpert modeで選択します。Googleのxxhdpi splitの変換・同じキーでの署名まで再現する場合は、下記のローカルスクリプトを使用してください。
+v0.3.2からは、このソースの**標準選択のまま**パッチしてください。`Automatic Clone Setup` が `.morphe` へのクローン化と権限・Providerの競合回避を行うため、公式Clone appやExpert modeでの手動設定は不要です。Googleはリソース入りのnodpi単体APKが扱いやすく、分割版では適合するresource splitも必要です。対応バリアントは[セットアップ手順](docs/setup-en.md)を参照してください。
 
 ## できること
 
@@ -59,6 +59,8 @@ ADB_SERIAL=端末のIP:ポート scripts/install-device.sh
 既存インストールを更新するときは**同じ署名キー**を使用します。Macの作業環境には既存キーと `.env` を配置済みです。パスワードはローカル専用の `local/SIGNING.md` にあります。新しいキーで既存キーを置き換えないでください。
 
 インストールする3ファイルは `dist/google-login.apk`、`dist/split_config.xxhdpi.apk`、`dist/gemini-login.apk` です。署名検証に成功したものだけを `dist/` に出力し、`SHA256SUMS` を生成します。
+
+インストール先は既定でAndroid user 0です。セキュアフォルダなど別ユーザーへ更新する場合は、`ANDROID_USER=150 ADB_SERIAL=端末のIP:ポート scripts/install-device.sh` のように明示します。
 
 利用するプロファイル内にmicroG (`app.revanced.android.gms`) とアカウントを用意し、Gemini (Morphe)を開いて初回のアカウント権限とmicroG拡張権限を許可します。SamsungではADBからセキュアフォルダ内のActivityを起動できないため、フォルダ内で手動で開きます。
 

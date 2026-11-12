@@ -20,19 +20,14 @@ No root operation or de-Googled ROM is required by the install procedure. The Is
 
 ## Morphe Manager configuration
 
-Use the matching source APKs, not an already patched APK. The Morphe versions used by the local pipeline are Desktop 1.15.0 and official patches 1.41.0.
+Use **v0.3.2 or newer** with the matching original APKs. The local pipeline uses Morphe Desktop 1.15.0 / Patcher 1.12.0. The official patches bundle 1.41.0 is retained for historical baseline and compatibility tests; it is not needed for normal patching.
 
 For **both** Google and Gemini:
 
-1. Select the compatible default patches from this repository.
-2. Add the official Morphe source and select **Clone app** (Expert mode if needed).
-3. Set these official Clone app options:
+1. Add this source and keep its compatible **default patch selection**, including **Automatic Clone Setup**.
+2. Patch and install. No Expert mode, official Clone app selection, or custom clone options are needed.
 
-| Option | Required value | Result |
-| --- | --- | --- |
-| `packageName` | `Default` | Original package name plus `.morphe` |
-| `updatePermissions` | `true` | Avoid custom-permission ownership collisions |
-| `updateProviders` | `true` | Avoid provider authority collisions |
+Automatic Clone Setup fixes the package name, declared custom permissions and provider authorities. The dependent bytecode patches also update owned permission references. Original permission protection levels are preserved. If an older saved selection still includes official Clone app, its `Default` package setting works with both its untouched options and the previous true/true settings while Automatic Clone Setup remains selected. Custom package names are rejected.
 
 Expected installed packages:
 
@@ -42,7 +37,7 @@ Expected installed packages:
 
 Custom clone names such as `com.quicksearch.bond` are **not supported**. DEX references and launcher visibility target the fixed `.morphe` packages.
 
-Install the Google base and its repackaged resource split, Gemini, and microG in the same Android user/profile. Use the same signing key for the Google base, its split and Gemini. The local scripts handle the xxhdpi split; Manager-only installation of the base is not the complete verified resource setup.
+Install the Google clone, Gemini clone and microG in the same Android user/profile. The Google nodpi APK above includes resources and needs no separate resource split. For the default API32 split input, also install its repackaged xxhdpi resource split. The verified pipeline signs Google, its split and Gemini with the same key; retain that existing key for updates. The local scripts handle the split. A bare base extracted from a resource-split bundle is not the complete verified resource setup.
 
 Never enable these historical experiments:
 
@@ -61,10 +56,10 @@ For the default API 32 inputs, follow the repository quick start, then:
 ```sh
 scripts/build-all.sh
 scripts/sign-apks.sh
-ADB_SERIAL=your_device_serial scripts/install-device.sh
+ANDROID_USER=0 ADB_SERIAL=your_device_serial scripts/install-device.sh
 ```
 
-The pipeline explicitly sets the Clone app options and verifies final package names, isolated permission declarations, unchanged protection levels, manifest/DEX permission references and noncolliding provider authorities. It also checks fresh patch-result JSON so a failed patch cannot be mistaken for an old successful APK.
+The pipeline uses this source's default selection with no external Clone app or option flags. It verifies final package names, isolated permission declarations, unchanged protection levels, manifest/DEX permission references and noncolliding provider authorities. It also checks fresh patch-result JSON so a failed patch cannot be mistaken for an old successful APK. Set `ANDROID_USER=150` for Secure Folder; installation defaults to user 0.
 
 For an APK exported from Manager, export it **before installation** and run:
 
@@ -75,8 +70,8 @@ scripts/verify-clone-contract.sh original-google-base.apk manager-google-output.
 scripts/verify-clone-contract.sh original-gemini-base.apk manager-gemini-output.apk
 ```
 
-The CLI scripts enforce this output validation. This is not a claim that Manager itself reads the repository's validation scripts or automatically forces external-source options.
+The CLI scripts enforce this additional output validation. Manager does not run these host scripts; automatic clone setup is implemented inside the MPP itself.
 
-For the original API 30/API 29 pair, [the Android 12 regression guide](testing/issue-8-android12.md) builds an isolated set of local test APKs without replacing the default inputs or `dist/`. The same v0.3.1 patch implementation is used; all 14 Google DEX files and all 3 Gemini DEX files are identical between these original variants and the default originals. Only the local default input selection required API 32, not the patch bundle itself.
+For the original API 30/API 29 pair, [the Android 12 regression guide](testing/issue-8-android12.md) builds an isolated set of local test APKs without replacing the default inputs or `dist/`. All 14 Google DEX files and all 3 Gemini DEX files are identical between these original variants and the default originals. Only the local default input selection required API 32, not the patch bundle itself. [Default clone verification](testing/default-clone.md) records the v0.3.2 tests.
 
 If the duplicate-permission error persists, provide your exact Google/Gemini/patch/Morphe versions, final package name, selected patches and Clone app option values. Do not publish signing keys, account tokens or full authentication logs.

@@ -4,8 +4,8 @@
 | --- | --- |
 | `Missing input` / ハッシュ不一致 | inputsのファイル名と配布バージョン。config/inputs.sha256を不用意に書き換えない |
 | KotlinやMorpheが見つからない | `scripts/setup-tools.sh` を実行。JDK 21が使われているか確認 |
-| `INSTALL_FAILED_DUPLICATE_PERMISSION` | 公式Clone appのupdatePermissions=true。任意パッケージ名は使わずDefaultにする。元Google削除では解決しない |
-| Providerの競合 | 公式Clone appのupdateProviders=true。verify-clone-contract.shで確認 |
+| `INSTALL_FAILED_DUPLICATE_PERMISSION` | v0.3.2以降の標準選択で原本から再パッチ。Automatic Clone Setupを選択したままにする。元Googleの削除は不要 |
+| Providerの競合 | v0.3.2以降のAutomatic Clone Setupで自動設定。verify-clone-contract.shで生成物を確認 |
 | Unsupported historical experiment | Account ID Fallback / Account Switch Lock Bypass / Account Sync Binder Loop Fixを選択解除する |
 | `INSTALL_FAILED_OLDER_SDK` | APKのバリアントを確認。同じ版でも既定のAPI32入力とGoogle API30／Gemini API29版がある。Android12では後者を使う。最低SDKを無理に書き換えない |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | 既存アプリと署名キーが異なる。既存キーを使い直す。スクリプトは自動アンインストールしない |
@@ -15,6 +15,7 @@
 | Webに転送される | Work Profileトランポリンパッチの適用結果を確認 |
 | 利用できません `(19)` | WorkProfileEligibilityパッチの適用を確認。ユーザー150で許可ログが出るか確認 |
 | Secure Folder内をADBで起動できない | Samsungの制約。フォルダ内でGemini (Morphe)を手動起動 |
+| Secure Folderのuser150へのshellインストールが拒否される | Samsungのcross-user制約。プロファイル内の通常インストール操作、または許可済みrootのPackageInstallerを使う。データ消去・アンインストールで回避しない |
 | ADB `No route to host` | 接続先IP・無線デバッグのポート・ネットワークを確認し、ADB_SERIALを変更 |
 
 APIキーやトークンをチャットやIssueに貼らない。アプリの生ログには認証情報が含まれ得るため、必要なエラー行だけを抽出する。画面ロックやSecure FolderのUI制限で取得できなかった画面を、過去のダンプで代用して判断しない。

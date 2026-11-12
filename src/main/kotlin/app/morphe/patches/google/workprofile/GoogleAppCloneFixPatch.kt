@@ -17,7 +17,7 @@ import com.android.tools.smali.dexlib2.iface.reference.StringReference
  */
 val googleAppCloneFixPatch = bytecodePatch(
     name = "Google App Package Clone Support",
-    description = "Redirects Google package and owned permission references to .morphe. Requires official Clone app: packageName=Default, updatePermissions=true, updateProviders=true.",
+    description = "Redirects Google package and owned permission references to .morphe. Automatic Clone Setup handles package, permission and provider isolation with the default selection.",
     default = true
 ) {
     compatibleWith("com.google.android.googlequicksearchbox")

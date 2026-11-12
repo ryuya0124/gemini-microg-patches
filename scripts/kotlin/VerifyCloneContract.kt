@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     check(original.packageName in setOf("com.google.android.googlequicksearchbox", "com.google.android.apps.bard"))
     val clone = original.packageName + ".morphe"
     check(patched.packageName == clone) {
-        "Unsupported clone package ${patched.packageName}; expected $clone. Set official Clone app packageName=Default."
+        "Unsupported clone package ${patched.packageName}; expected $clone. Keep Automatic Clone Setup selected."
     }
     check(patched.versionName == original.versionName && patched.versionCode == original.versionCode)
     val before = original.nodes.filter { it.tag == "permission" }.associate { it.attrs.getValue("name") to it }
@@ -38,7 +38,7 @@ fun main(args: Array<String>) {
     check(before.isNotEmpty())
     val names = before.keys.associateWith { ClonePermissionNames.renamed(it, original.packageName) }
     check(after.keys == names.values.toSet()) {
-        "Custom permission declarations not isolated. Enable Clone app updatePermissions=true; missing=${names.values.toSet()-after.keys}; stale=${after.keys-names.values.toSet()}"
+        "Custom permission declarations not isolated. Keep Automatic Clone Setup selected; missing=${names.values.toSet()-after.keys}; stale=${after.keys-names.values.toSet()}"
     }
     for ((name, replacement) in names) {
         check(before.getValue(name).attrs["protectionLevel"] == after.getValue(replacement).attrs["protectionLevel"]) {
@@ -56,7 +56,7 @@ fun main(args: Array<String>) {
     val oldAuthorities = authorities(original); val newAuthorities = authorities(patched)
     check(oldAuthorities.none { it.startsWith('@') } && newAuthorities.none { it.startsWith('@') }) { "Resolve resource-valued authorities before validating this APK" }
     check((oldAuthorities intersect newAuthorities).isEmpty()) {
-        "Provider authority collision: ${oldAuthorities intersect newAuthorities}. Enable Clone app updateProviders=true."
+        "Provider authority collision: ${oldAuthorities intersect newAuthorities}. Keep Automatic Clone Setup selected."
     }
     check(patched.nodes.count { it.tag == "provider" } == original.nodes.count { it.tag == "provider" })
     var staleDex = 0

@@ -1,5 +1,7 @@
 # Issue #8 — Android 12 / API 31 verification
 
+This records the original v0.3.1 run. The subsequent [v0.3.2 default-selection verification](default-clone.md) repeated the API31/API36 tests with automatic clone setup. The current fixture builder uses that default selection for its fixed APKs.
+
 Verified on 2026-11-12, after v0.3.1 publication. The original pre-release run used API36; this is an additional API31 run, not a rewritten release history.
 
 ## Original input variants

@@ -149,3 +149,19 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - 再現用ビルドは `scripts/emulator/build-android12-fixtures.sh`。既定の `inputs/` / `dist/` を置き換えない。記録・ハッシュ・コマンドは `docs/testing/issue-8-android12.md`、ローカル証拠は `local/issue8/api31/emulator-verified/`。
 - エミュレータはGoogleアカウント・microG未登録。画面はSign in to use Gemini。インストール／権限／プロセス／起動確認であり、アカウント認証・チャット・Lens処理・OnePlus8実機の確認ではない。Galaxyの既存アプリは今回更新していない。
 - v0.3.1公開済み。Issue #8へは利用者の指示で短い英語の返信を投稿済み。バージョン質問とAPI31非対応の段落は利用者の指示で削除。Issueは開いたまま。
+
+## Morphe標準設定への対応・実機更新作業（2026-11-12）
+
+- ユーザーが実機の更新と「Morpheの標準設定でインストールが通ること」を指定。v0.3.2としてAutomatic Clone Setupをdefault=trueで追加し、Google/Geminiの必須依存にもした。通常ビルドは独自ソースの既定選択のみで、公式Clone app/Expert mode/-O指定が不要。
+- 原本Manifestの権限・Providerを先に記録し、Patcher1.12の名前順実行・逆順finalizeを使って最後に固定.morphe名前空間へ設定。既存のpermissionSupportは参照だけを更新する。旧公式Clone appの既定false/false、従来true/trueでも二重変換なし。任意名は明示的に停止。Automatic Clone Setupの既定選択を維持すること。
+- 生成後の権限保護レベル、Manifest/DEX参照、Provider競合、各フックの命令幅/分岐を検証済み。既存キーで署名、公開MPPに26 JVMクラスのAndroid DEXを収録し検証済み。
+- 配布MPPからの既定生成と旧設定の互換性/出力保持/実験拒否11項目成功。API31とAPI36で各26項目を再実行し、旧不具合の再現と修正版の解消が成功。詳細はdocs/testing/default-clone.md。
+- install-device.shはANDROID_USERを両installへ渡す。未指定時は0、Secure Folderは150を明示。新規キー生成・アンインストール・データ消去は行わない。
+- 実機のlease取得・同一署名でのuser150更新・データ領域/端末状態/インストール済みAPKハッシュ確認は、ユーザーが依頼を許可したMac側Codexへ担当を分離。端末の元Google/microGやuser0/10へは変更を加えない。実機チャットは利用者の確認待ちとして扱う。
+
+### 実機への適用結果
+
+- SM-S948Q / Android17のSecure Folder user150にGoogle/Gemini修正版を-r更新済み。Google base+xxhdpiは同一PackageInstallerセッション。インストール済み3APKのSHA256・既存署名を照合し一致。
+- LensServiceは `com.google.android.googlequicksearchbox.morphe.permission.LENS_SERVICE` を要求する状態へ修正済み。user150のCE/DE領域を維持し、user0/10は未導入のまま。OS/SystemUI識別・SELinux状態も維持。
+- Samsungがshellのcross-userアクセスを拒否したため、このSecure Folderへの自動更新では許可済みroot PackageInstallerを使用。通常ユーザーでのエミュレータインストールはshell UID2000で確認済み。
+- 一時APKと所有したleaseを解放。親も `local/issue8/auto-clone/device-update/RESULT.md` と `verified-summary.json` を照合。ログイン/チャットはユーザー確認待ち。秘密の端末識別子・生ログはGitへ含めない。

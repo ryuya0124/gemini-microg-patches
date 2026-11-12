@@ -28,6 +28,7 @@ object ClonePermissionNames {
 private fun permissionSupport(originalPackage: String): app.morphe.patcher.patch.BytecodePatch {
     var names = emptyMap<String, String>()
     val manifestReferences = resourcePatch {
+        dependsOn(automaticCloneSetupPatch)
         execute {
             VersionHookRegistry.requireProfile(packageMetadata)
             check(packageMetadata.packageName == originalPackage)
@@ -43,8 +44,8 @@ private fun permissionSupport(originalPackage: String): app.morphe.patcher.patch
                 val all = doc.getElementsByTagName("*")
                 for (i in 0 until all.length) {
                     val element = all.item(i) as Element
-                    // Leave declarations to official Clone app's finalize block. Renaming
-                    // them here would make that patch append .morphe twice.
+                    // The automatic clone finalizer owns declarations; leaving them
+                    // unchanged here also avoids double rewriting by optional Clone app.
                     val attributes = mutableListOf("permission", "readPermission", "writePermission")
                     if (element.tagName.startsWith("uses-permission")) attributes.add("name")
                     for (attribute in attributes) {
