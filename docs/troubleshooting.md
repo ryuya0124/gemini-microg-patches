@@ -7,6 +7,8 @@
 | `INSTALL_FAILED_DUPLICATE_PERMISSION` | v0.3.2以降の標準選択で原本から再パッチ。Automatic Clone Setupを選択したままにする。元Googleの削除は不要 |
 | Providerの競合 | v0.3.2以降のAutomatic Clone Setupで自動設定。verify-clone-contract.shで生成物を確認 |
 | 起動時に `VerifyError` / `register index out of range (1 >= 1)` | v0.3.3以降のMPPを読み込み、元Google APKから再パッチ。Android版Managerの実装差によるレジスタ不足を修正済み。[再現・検証](testing/issue-8-manager-registers.md) |
+| 汎用の更新停止を使うと「Update your Google app」が出る | 両アプリをv0.3.5以降で再パッチし、Compatible Play Store Update Blockingを維持。汎用パッチが別アプリの値も自分の版数へ戻す誤判定を修正。[実ストア検証](testing/issue-8-play-store.md) |
+| Google未導入/古い場合のエラー画面で落ちる | v0.3.5で単体Gemini APKのエラー用画像不足を修正。実際に不足/旧版のGoogleクローンは引き続き導入・更新が必要 |
 | Unsupported historical experiment | Account ID Fallback / Account Switch Lock Bypass / Account Sync Binder Loop Fixを選択解除する |
 | `INSTALL_FAILED_OLDER_SDK` | APKのバリアントを確認。同じ版でも既定のAPI32入力とGoogle API30／Gemini API29版がある。Android12では後者を使う。最低SDKを無理に書き換えない |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | 既存アプリと署名キーが異なる。既存キーを使い直す。スクリプトは自動アンインストールしない |

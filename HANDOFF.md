@@ -1,6 +1,6 @@
 # 引き継ぎメモ
 
-更新: 2026-11-12（最新の追記は末尾）
+更新: 2026-11-13（最新の追記は末尾）
 
 ## リリース本文の方針
 
@@ -202,3 +202,15 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - 公開MPPをダウンロードして検証済みMPPと照合。173574 bytes、SHA256 `3958947638c8ecebe6f9752a4395dd4e24c2a55da88b7c1a1a4de956e0ac0393` で完全一致。公開SHA256SUMSのMPP/更新JSONも一致。本文は変更点2項目だけになっていることを確認。
 - [Issue返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6824765654) で権限の用途・事前説明・拒否後の再要求抑止を短く案内。システム文言自体は変わらないことを明記。Issueを閉じる操作は行っていない。
 - 専用AVD2台は名前を確認して停止。実機接続やADBサーバーは停止せず、実機アプリも変更していない。証拠はMacのlocal/issue8/permission-uiとWindowsのoutputsへ保存。
+
+## Issue #8 更新停止の追加返信・v0.3.5候補（2026-11-12〜13）
+
+- 投稿者が汎用更新停止はGeminiに効かないと報告。短く確認したところ、画像はGemini自身の更新ではなくネイティブのUpdate your Google app画面だった。該当コメント6825468743。利用者は実ストアでのデバッグと、原因特定/再現/修正確認後の公開を明示。
+- 公式Play Store入り専用API31 AVD GeminiPatch_PlayStore_API31 / emulator-5584を追加。利用者がWindowsのscrcpy画面から手動ログイン。ログイン中は操作・画面取得を止め、完了後にテストした。ストア54.0.09-31で公式Google/GeminiはOpen、クローンIDはItem not foundを確認。物理端末のアプリ/設定は変更しない。
+- 原因を実APKで確定: Google/Gemini両方のversionCodeは2147483647になっていたが、Geminiの汎用ランタイムが他パッケージの値も自分の元コード345へ戻し、Googleを古いと誤判定。画像どおりの警告とStoreへの遷移結果を再現。
+- Compatible Play Store Update Blockingをdefault追加し、汎用ランタイムの復元を自分の.morpheだけへ限定。未選択時はNoop。int/long/majorの既存処理を維持、レジスタ数を拡大しない。これは更新停止そのものを自動有効化するパッチではなく、公式の任意パッチとの互換修正。
+- 再現中に、Gemini単体APKのエラー画像がdensity split依存で落ちる別件も発見。現行版のBardErrorLogoをframework画像へ変更し、コード1の低バージョンfixture/クローン未導入時も警告が正しく表示されることを確認。警告分岐や最低版チェックは無効化していない。新しいstyleフックを版別Kotlin/JSONへ記録。
+- 最終MPPからDesktop+公式1.41で23/23、実Android Manager2.5/Patcher2.3+公式2.2で生成/保存した両APKでも同じ実ストアの23/23を成功。両方/片方の最大値、元のコード、foreign/own/major、同一署名ダウングレード拒否、真の不足/低コード、原本/アカウント維持を確認。
+- default回帰API31/API36各26、MPP設定11も成功。追加のUniversalVersionProbeとVerifyUpdateCompatibilityで実APKと分岐/レジスタを検査。MPPは27パッチクラスをDEX収録。検証MPP SHA256 c8fde8dad57baba664fd8a8f948125fdeca77165b20a0cba37ad73b9ba771778。
+- 詳細/コマンド/範囲/ハッシュはdocs/testing/issue-8-play-store.md。生UI XMLやAVDにはログイン情報があるためlocal/のまま公開しない。StoreログインとmicroG側のチャット認証は別で、今回は後者を確認したとは扱わない。
+- リリース本文は変更/修正2点のみ。CI/配布物照合後に公開・短い返信を行う。署名キーは既存を維持し、公開APK/キー/生ログを添付しない。
