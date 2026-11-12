@@ -6,9 +6,11 @@ microGを使い、通常領域とSamsungセキュアフォルダでGeminiを動�
 
 ## Setup / installation (English)
 
-**Use v0.3.2 or newer and keep the default patch selection.** `Automatic Clone Setup` handles package, permission and provider isolation; official Clone app, Expert mode and custom options are unnecessary. Read [Supported setup](docs/setup-en.md) for the input variants. Do not select the three historical account experiments.
+**Use v0.3.3 or newer and keep the default patch selection.** This includes the Android Morphe Manager startup-crash fix. `Automatic Clone Setup` handles package, permission and provider isolation; official Clone app, Expert mode and custom options are unnecessary. Read [Supported setup](docs/setup-en.md) for the input variants. Do not select the three historical account experiments.
 
 Issue #8 reproduction and the verified fix are recorded in [the emulator regression report](docs/testing/issue-8-emulator.md).
+
+**v0.3.3:** Android版Morphe Managerで生成したGoogleが起動時に落ちる不具合を修正。Manager 2.5.0で旧版・修正版を生成し、Android 12で同じVerifyErrorの再現と解消を確認しました。[検証記録](docs/testing/issue-8-manager-registers.md)。上記の実機チャット確認はv0.3.2の記録です。
 
 ## Morpheに追加
 

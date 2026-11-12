@@ -165,3 +165,13 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - LensServiceは `com.google.android.googlequicksearchbox.morphe.permission.LENS_SERVICE` を要求する状態へ修正済み。user150のCE/DE領域を維持し、user0/10は未導入のまま。OS/SystemUI識別・SELinux状態も維持。
 - Samsungがshellのcross-userアクセスを拒否したため、このSecure Folderへの自動更新では許可済みroot PackageInstallerを使用。通常ユーザーでのエミュレータインストールはshell UID2000で確認済み。
 - 一時APKと所有したleaseを解放。親も `local/issue8/auto-clone/device-update/RESULT.md` と `verified-summary.json` を照合。更新後、利用者がログイン状態の維持とチャット返答成功を「返答できた」と確認。自動照合結果と利用者の動作確認を区別して記録。秘密の端末識別子・生ログはGitへ含めない。
+
+## Issue #8再返信・Android ManagerのVerifyError（2026-11-12）
+
+- 追加報告はインストール後の `ekjg.b(): register index out of range (1 >= 1)`。Android Manager2.5.0（Patcher2.3.0）の実GUIで公開v0.3.2 MPPを原本Google API30へ既定適用し、専用API31 AVDで同じVerifyErrorを再現。
+- 原因はProcessNameSanitizePatchのprivate registerCountへのreflection。Patcher2.3.0のMutableMethod.ImplementationはサブクラスのためgetDeclaredFieldが失敗し、例外を握りつぶした旧版は1レジスタにv1/v2を注入した。Desktop1.12生成だけでは見つからなかった。
+- v0.3.3では3レジスタ明示のprivate static synthetic helperを追加し、元providerのレジスタを変更しない。returnのラベルはhelper呼び出しへ維持。GMS/無効の旧account実験からも同じreflectionを除去し、既存レジスタ数を検証。旧実験は引き続き実行拒否。
+- 実Android Managerで同じ原本からv0.3.3を生成・書き出し、静的レジスタ検査とAPI31での初回/キャッシュ/seeded正常化・Widget入口・Google起動・クラッシュ無しを確認。専用runnerは16項目成功（既存test clone削除を含む）、最後にManager署名のtest cloneだけ削除。実機と元Googleは変更しない。
+- Desktop生成のAPI31/API36も各26項目、MPP設定11項目を再実行し成功。MPPは26クラスをAndroid DEXへ収録。今回はアカウント未登録のエミュレータでの検証で、実機チャット確認はv0.3.2のまま。
+- 詳細・原本ハッシュ参照・実GUI手順・生成APKハッシュ・コマンドは [docs/testing/issue-8-manager-registers.md](docs/testing/issue-8-manager-registers.md)。ローカル証拠は `local/issue8/register-fix/`。今後Patcher更新ではDesktop生成APKの実行だけで済ませず、実Android Managerでの生成を比較する。
+- Issueへ短い原因説明を返信済み。自動closeはしない。リリース後の返信・公開結果は次の追記へ記録する。

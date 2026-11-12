@@ -6,6 +6,7 @@
 | KotlinやMorpheが見つからない | `scripts/setup-tools.sh` を実行。JDK 21が使われているか確認 |
 | `INSTALL_FAILED_DUPLICATE_PERMISSION` | v0.3.2以降の標準選択で原本から再パッチ。Automatic Clone Setupを選択したままにする。元Googleの削除は不要 |
 | Providerの競合 | v0.3.2以降のAutomatic Clone Setupで自動設定。verify-clone-contract.shで生成物を確認 |
+| 起動時に `VerifyError` / `register index out of range (1 >= 1)` | v0.3.3以降のMPPを読み込み、元Google APKから再パッチ。Android版Managerの実装差によるレジスタ不足を修正済み。[再現・検証](testing/issue-8-manager-registers.md) |
 | Unsupported historical experiment | Account ID Fallback / Account Switch Lock Bypass / Account Sync Binder Loop Fixを選択解除する |
 | `INSTALL_FAILED_OLDER_SDK` | APKのバリアントを確認。同じ版でも既定のAPI32入力とGoogle API30／Gemini API29版がある。Android12では後者を使う。最低SDKを無理に書き換えない |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | 既存アプリと署名キーが異なる。既存キーを使い直す。スクリプトは自動アンインストールしない |

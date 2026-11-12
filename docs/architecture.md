@@ -26,6 +26,8 @@ Activityレジスタが生きている最後の `MainActivity.o:Z` への書き�
 
 クローン化でプロセス名に `.morphe` が追加されると、コンパイル済みDaggerのプロセス名switchに一致しない。`ProcessNameSanitizePatch.kt` がプロセス名プロバイダを正規化する。
 
+v0.3.3以降は3レジスタを明示したprivate static補助メソッドで正規化し、元プロバイダのレジスタ数を変えない。各returnの命令そのものを補助メソッド呼び出しに置換し、キャッシュ分岐のラベルも呼び出しへ向ける。Patcher内部のprivate `registerCount`をreflectionで書き換えてはいけない。Android ManagerのPatcher 2.3.0では実装がサブクラスに包まれ、旧方式はフィールドを見つけられず不正DEXを生成した。[検証](testing/issue-8-manager-registers.md)。
+
 ただしアカウントストアのmain-process判定ではContext.packageNameと比較するため、実際のプロセス名が必要。この判定だけ `Application.getProcessName()` を使う。これによりsearchプロセスがローカルアカウントストアを選び、AccountSyncServiceへの自己接続ループを防ぐ。
 
 以前の固定AccountId、ロック省略、Binder成功偽装の3パッチは `account/AccountSyncPatches.kt` に履歴として残すがdefault=false。正常な同期を壊すため有効化しない。
