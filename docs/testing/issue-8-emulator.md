@@ -1,5 +1,7 @@
 # Issue #8 emulator regression — 2026-11-12
 
+The original pre-release verification below used API 36. A subsequent [Android 12 / API 31 run](issue-8-android12.md) also passed all 26 assertions using the original lower-minSdk variants of the same app versions. The default API 32 APKs do not imply a patch-wide Android 12 limitation.
+
 ## Environment and scope
 
 - Dedicated disposable AVD: `GeminiPatch_Issue8_API36`, Google APIs arm64, Android 16 / API 36, emulator serial `emulator-5580`.
@@ -60,7 +62,7 @@ All nine fixture-build/rejection assertions passed. These configuration tests ru
 
 ## Re-running
 
-Use a disposable AVD with the **exact** name `GeminiPatch_Issue8_API36`. Do not reuse a personal emulator. The runner refuses physical devices, a different AVD name and root shell. It temporarily removes/disables the original Google for user 0 and restores it in `finally` blocks.
+Use a disposable AVD with the **exact** name `GeminiPatch_Issue8_API36` for this default-input run. Do not reuse a personal emulator. The runner permits only the explicitly selected dedicated API31/API36 AVD and matching SDK, and refuses physical devices or root shell. It temporarily removes/disables the original Google for user 0 and restores it in `finally` blocks.
 
 ```sh
 # With the SDK's Google APIs arm64 image installed:

@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 p = argparse.ArgumentParser()
 p.add_argument('--adb', required=True)
 p.add_argument('--serial', required=True)
+p.add_argument('--avd', choices=['GeminiPatch_Issue8_API31', 'GeminiPatch_Issue8_API36'], default='GeminiPatch_Issue8_API36')
+p.add_argument('--monolithic-google', action='store_true', help='Google input contains its resources; do not install the API36 resource split')
 p.add_argument('--bad-apk', required=True)
 p.add_argument('--baseline-apk', required=True)
 p.add_argument('--dist', required=True)
@@ -29,15 +31,29 @@ def record(name, command, predicate=lambda r: r.returncode == 0):
     ok = bool(predicate(r))
     results.append({'test': name, 'passed': ok, 'returnCode': r.returncode})
     print(f'{name}: {"PASS" if ok else "FAIL"}', flush=True)
-    assert ok, r.stdout + r.stderr
+    assert ok, f'{name} failed; see {out / (name + ".txt")}\n' + (r.stdout + r.stderr)[:1500]
     return r.stdout + r.stderr
 
 assert adb('shell', 'getprop', 'ro.kernel.qemu').stdout.strip() == '1'
-assert adb('emu', 'avd', 'name').stdout.splitlines()[0] == 'GeminiPatch_Issue8_API36'
+assert adb('emu', 'avd', 'name').stdout.splitlines()[0] == a.avd
+expected_sdk = '31' if a.avd.endswith('API31') else '36'
+assert adb('shell', 'getprop', 'ro.build.version.sdk').stdout.strip() == expected_sdk
 assert 'uid=2000(shell)' in adb('shell', 'id').stdout, 'Use normal shell, not adb root'
 completed = False
 original = 'com.google.android.googlequicksearchbox'
 clone = original + '.morphe'
+def resumed_activities(text):
+    # API31 uses mResumedActivity:, while newer releases expose topResumedActivity=.
+    return [line for line in text.splitlines() if any(marker in line for marker in
+        ('topResumedActivity=', 'mResumedActivity:', 'mResumedActivity='))]
+
+def clone_is_resumed(text):
+    return any(clone+'/' in line for line in resumed_activities(text))
+
+def install_google(apk):
+    if a.monolithic_google:
+        return ['install', '--no-incremental', '-r', str(apk)]
+    return ['install-multiple', '--no-incremental', '-r', str(apk), str(dist/'split_config.xxhdpi.apk')]
 try:
     record('original_system_package', ['shell', 'pm', 'path', original], lambda r: '/product/' in r.stdout or '/system/' in r.stdout)
     duplicate = lambda r: r.returncode != 0 and 'INSTALL_FAILED_DUPLICATE_PERMISSION' in r.stdout+r.stderr and 'already owned by '+original in r.stdout+r.stderr
@@ -47,7 +63,7 @@ try:
         record('duplicate_permission_after_user_removal', ['install', '--no-incremental', a.bad_apk], duplicate)
     finally:
         record('restore_original_for_user0', ['shell', 'cmd', 'package', 'install-existing', '--user', '0', original])
-    record('install_v030_baseline_alongside_original', ['install-multiple', '--no-incremental', '-r', a.baseline_apk, str(dist/'split_config.xxhdpi.apk')])
+    record('install_v030_baseline_alongside_original', install_google(a.baseline_apk))
     record('install_permission_probe', ['install', '--no-incremental', '-r', a.probe])
     def probe(expected):
         def check(r):
@@ -66,7 +82,7 @@ try:
     record('baseline_widget_probe', ['shell', 'am', 'broadcast', '-a', 'app.geminipatch.CONTRACT_PROBE', '-n', clone+'/com.google.android.apps.gsa.staticplugins.searchwidget.GoogleSearchWidgetProvider'])
     time.sleep(3)
     record('baseline_widget_crash_reproduced', ['logcat', '-d', '-b', 'crash', '-v', 'brief'], lambda r: ('Process: '+clone) in r.stdout and 'ClassCastException' in r.stdout and 'GoogleSearchWidgetProvider' in r.stdout)
-    record('install_fixed_clone_alongside_original', ['install-multiple', '--no-incremental', '-r', str(dist/'google-login.apk'), str(dist/'split_config.xxhdpi.apk')])
+    record('install_fixed_clone_alongside_original', install_google(dist/'google-login.apk'))
     probe('granted')
     process_probe('normalized')
     record('grant_fixture_accounts', ['shell', 'pm', 'grant', clone, 'android.permission.GET_ACCOUNTS'])
@@ -79,11 +95,11 @@ try:
         record('launch_gemini_without_enabled_original', ['shell', 'am', 'start', '-W', '-n', 'com.google.android.apps.bard.morphe/com.google.android.apps.bard.shellapp.BardEntryPointActivity'], lambda r: r.returncode == 0 and 'Status: ok' in r.stdout)
         for attempt in range(30):
             current = adb('shell', 'dumpsys', 'activity', 'activities').stdout
-            if any(clone in line and 'topResumedActivity=' in line for line in current.splitlines()):
+            if clone_is_resumed(current):
                 break
             time.sleep(0.3)
-        state = record('foreground_after_launch', ['shell', 'dumpsys', 'activity', 'activities'], lambda r: r.returncode == 0 and any(clone in line and 'topResumedActivity=' in line for line in r.stdout.splitlines()))
-        resumed = [line for line in state.splitlines() if 'topResumedActivity=' in line or 'mResumedActivity:' in line]
+        state = record('foreground_after_launch', ['shell', 'dumpsys', 'activity', 'activities'], lambda r: r.returncode == 0 and clone_is_resumed(r.stdout))
+        resumed = resumed_activities(state)
         assert any(clone in line for line in resumed), 'Cloned Google did not become the resumed activity: '+str(resumed)
         assert not any('ErrorActivity' in line for line in resumed)
         record('widget_update_broadcast', ['shell', 'am', 'broadcast', '-a', 'app.geminipatch.CONTRACT_PROBE', '-n', clone+'/com.google.android.apps.gsa.staticplugins.searchwidget.GoogleSearchWidgetProvider'])
@@ -93,4 +109,4 @@ try:
         record('restore_original_enabled_state', ['shell', 'pm', 'default-state', '--user', '0', original])
     completed = True
 finally:
-    (out/'results.json').write_text(json.dumps({'passed': completed and all(r['passed'] for r in results), 'timeUTC': datetime.now(timezone.utc).isoformat(), 'serial': a.serial, 'avd': 'GeminiPatch_Issue8_API36', 'tests': results}, indent=2)+'\n')
+    (out/'results.json').write_text(json.dumps({'passed': completed and all(r['passed'] for r in results), 'timeUTC': datetime.now(timezone.utc).isoformat(), 'serial': a.serial, 'avd': a.avd, 'sdk': expected_sdk, 'monolithicGoogle': a.monolithic_google, 'tests': results}, indent=2)+'\n')

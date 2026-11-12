@@ -1,6 +1,6 @@
 # 引き継ぎメモ
 
-更新: 2026-09-06
+更新: 2026-11-12（最新の追記は末尾）
 
 ## 現在の状態
 
@@ -138,3 +138,14 @@
 ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/キャッシュ/seeded cacheの差を検証。旧版の未補正キャッシュとwidget receiverのClassCastExceptionを再現し、修正版の正常化とクラッシュ消失を確認。最終26項目+設定9項目が成功。保護されたAPPWIDGET_UPDATEは偽装せず、同じexported receiverのDI入口へ無害な独自actionを明示送信する。
 
 公開前の最終証拠はlocal/issue8/emulator-verified/。スクリーンショットはログイン待ち画面（アカウント未登録）で、エラーのDownload Google画面でもクラッシュダイアログでもない。チャット/Lensの実処理を検証した意味ではない。
+
+## Android 12での追加確認（2026-11-12）
+
+- ユーザーからAndroid12エミュレータでの検証を指定された。API31イメージrevision11の専用AVD `GeminiPatch_Issue8_API31` を作成し、同じv0.3.1実装で26項目すべて成功。公開前のAPI36確認とは別の、公開後の追加検証。
+- 既定入力のminSdk32をバージョン全体の制限のように説明した点を訂正。同じGoogle17.72.17.ve.arm64/301831138にAPI30 nodpi単体APK、同じGemini1.0.995038376/345にAPI29バリアントがある。Mac側Codexへユーザーの許可で取得だけを依頼し、通常ブラウザから原本を取得、ハッシュを検証した。
+- 原本Google全14DEX・Gemini全3DEXが既定入力と完全一致。フックの追加変更・新しいMPP・署名キーは不要。最低SDKは原本もパッチ後も30/29を維持。minSdkを書き換えたローカル実験はインストールせず不採用。
+- 元Googleあり／ユーザーのみ削除後の重複権限エラーを再現。API31で最初の衝突はC2D_MESSAGE。v0.3.0のLens許可不整合とキャッシュ後のWidget ClassCastExceptionを再現し、修正版で解消。元Google無効時の改造Googleへの起動、独自action受信後のクラッシュ無しを確認。元Googleの状態を復元。
+- API31のdumpsysは `mResumedActivity:` を使うため、最初のテストは起動済みにもかかわらずAPI36向けの文字列判定で失敗。実際の両フォーマットを扱うようテストを修正し、全26項目を再実行。専用AVD・SDK・通常shellの制約は維持。
+- 再現用ビルドは `scripts/emulator/build-android12-fixtures.sh`。既定の `inputs/` / `dist/` を置き換えない。記録・ハッシュ・コマンドは `docs/testing/issue-8-android12.md`、ローカル証拠は `local/issue8/api31/emulator-verified/`。
+- エミュレータはGoogleアカウント・microG未登録。画面はSign in to use Gemini。インストール／権限／プロセス／起動確認であり、アカウント認証・チャット・Lens処理・OnePlus8実機の確認ではない。Galaxyの既存アプリは今回更新していない。
+- v0.3.1公開済み。Issue #8へは利用者の指示で短い英語の返信を投稿済み。バージョン質問とAPI31非対応の段落は利用者の指示で削除。Issueは開いたまま。

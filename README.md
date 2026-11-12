@@ -6,7 +6,7 @@ microGを使い、通常領域とSamsungセキュアフォルダでGeminiを動�
 
 ## Setup / installation (English)
 
-**Read [Supported setup](docs/setup-en.md) before patching.** Use official Clone app with `packageName=Default`, `updatePermissions=true`, `updateProviders=true`. Do not select the three historical account experiments. The current Google/Gemini pair requires Android 12L / API 32 or newer; standard Android 12 / API 31 is unsupported by these inputs.
+**Read [Supported setup](docs/setup-en.md) before patching.** Use official Clone app with `packageName=Default`, `updatePermissions=true`, `updateProviders=true`. Do not select the three historical account experiments. Choose the correct APK variant: the default local inputs require API 32, while the same app versions also have Google API 30 and Gemini API 29 variants suitable for Android 12 installation.
 
 Issue #8 reproduction and the verified fix are recorded in [the emulator regression report](docs/testing/issue-8-emulator.md).
 

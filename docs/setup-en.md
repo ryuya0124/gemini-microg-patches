@@ -4,17 +4,19 @@ Gemini is a launcher. Its native assistant/chat implementation is in the **Googl
 
 `Gemini Standalone Support` means **installable without Gemini's resource splits**, not “independent of the Google app.” Keep the original system Google app installed. Do not remove it to work around an installation error.
 
-## Supported input pair
+## Input versions and variants
 
 | Component | Current local build input / tested version | Minimum Android |
 | --- | --- | --- |
-| Google app | `17.72.17.ve.arm64` / versionCode `301831138` | API 32 (Android 12L) |
-| Gemini launcher | `1.0.995038376` / versionCode `345` | API 32 (Android 12L) |
+| Google app, default resource-split input | `17.72.17.ve.arm64` / versionCode `301831138` | API 32 (Android 12L) |
+| Gemini launcher, default input | `1.0.995038376` / versionCode `345` | API 32 (Android 12L) |
+| Google app, monolithic nodpi variant | Same version; [Android 11+ download](https://www.apkmirror.com/apk/google-inc/google-search/google-app-17-72-17-release/google-app-17-72-17-ve-arm64-android-apk-download/) | API 30 |
+| Gemini launcher, arm64/arm variant | Same version; [Android 10+ download](https://www.apkmirror.com/apk/google-inc/google-gemini/google-gemini-1-0-995038376-release/google-gemini-1-0-995038376-3-android-apk-download/) | API 29 |
 | microG RE | `7.3.0`, package `app.revanced.android.gms`, previously verified on the Samsung device | Check microG's own requirements |
 
-**Android 12 / API 31 cannot install this current APK pair.** Root does not change that SDK requirement. Historical hook records do not prove that a different input pair works on API 31. Provide the exact APK versions and `adb shell getprop ro.build.version.sdk` when reporting compatibility issues.
+**The APK variant matters as well as its version number.** API 31 rejects the default API 32 files with `INSTALL_FAILED_OLDER_SDK`; this does not establish that the app version or patch bundle is incompatible with Android 12. For Android 12, use the original API 30 Google and API 29 Gemini variants above. Their minimum SDK is preserved during patching. The Google nodpi APK contains its resources and does not use the API 32 xxhdpi split.
 
-No root operation or de-Googled ROM is required by the install procedure. The Issue #8 regression was tested on an API 36 Google APIs emulator with its original Google system app present, using shell UID 2000 and without `adb root`/`su`. This is not verification on a physical OnePlus 8 / Android 12.
+No root operation or de-Googled ROM is required by the install procedure. The Issue #8 regression passed on Google APIs emulators running **Android 12 / API 31** and API 36, with the original Google system app present, using shell UID 2000 and without `adb root`/`su`. The API 31 run used the API 30/API 29 variants above and passed all 26 assertions. See the [Android 12 verification and exact input hashes](testing/issue-8-android12.md). Account login/chat and the reporter's physical OnePlus 8 were not tested in these emulators.
 
 ## Morphe Manager configuration
 
@@ -54,7 +56,7 @@ The GmsCore redirect targets `app.revanced.android.gms`. The old title containin
 
 ## Verified local build
 
-Follow the repository quick start, then:
+For the default API 32 inputs, follow the repository quick start, then:
 
 ```sh
 scripts/build-all.sh
@@ -74,5 +76,7 @@ scripts/verify-clone-contract.sh original-gemini-base.apk manager-gemini-output.
 ```
 
 The CLI scripts enforce this output validation. This is not a claim that Manager itself reads the repository's validation scripts or automatically forces external-source options.
+
+For the original API 30/API 29 pair, [the Android 12 regression guide](testing/issue-8-android12.md) builds an isolated set of local test APKs without replacing the default inputs or `dist/`. The same v0.3.1 patch implementation is used; all 14 Google DEX files and all 3 Gemini DEX files are identical between these original variants and the default originals. Only the local default input selection required API 32, not the patch bundle itself.
 
 If the duplicate-permission error persists, provide your exact Google/Gemini/patch/Morphe versions, final package name, selected patches and Clone app option values. Do not publish signing keys, account tokens or full authentication logs.

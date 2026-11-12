@@ -7,7 +7,7 @@
 | `INSTALL_FAILED_DUPLICATE_PERMISSION` | 公式Clone appのupdatePermissions=true。任意パッケージ名は使わずDefaultにする。元Google削除では解決しない |
 | Providerの競合 | 公式Clone appのupdateProviders=true。verify-clone-contract.shで確認 |
 | Unsupported historical experiment | Account ID Fallback / Account Switch Lock Bypass / Account Sync Binder Loop Fixを選択解除する |
-| `INSTALL_FAILED_OLDER_SDK` | 現行APKペアはAPI32以上。Android12/API31には非対応 |
+| `INSTALL_FAILED_OLDER_SDK` | APKのバリアントを確認。同じ版でも既定のAPI32入力とGoogle API30／Gemini API29版がある。Android12では後者を使う。最低SDKを無理に書き換えない |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | 既存アプリと署名キーが異なる。既存キーを使い直す。スクリプトは自動アンインストールしない |
 | ログインできない | 同じプロファイル内にmicroGとアカウントがあるか、初回権限を許可したか確認 |
 | 権限に「不明な操作の実行」と表示される | microG 7.0.0の `app.revanced.gms.EXTENDED_ACCESS` の表示。アカウント同期に必要 |
