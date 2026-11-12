@@ -214,3 +214,11 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - default回帰API31/API36各26、MPP設定11も成功。追加のUniversalVersionProbeとVerifyUpdateCompatibilityで実APKと分岐/レジスタを検査。MPPは27パッチクラスをDEX収録。検証MPP SHA256 c8fde8dad57baba664fd8a8f948125fdeca77165b20a0cba37ad73b9ba771778。
 - 詳細/コマンド/範囲/ハッシュはdocs/testing/issue-8-play-store.md。生UI XMLやAVDにはログイン情報があるためlocal/のまま公開しない。StoreログインとmicroG側のチャット認証は別で、今回は後者を確認したとは扱わない。
 - リリース本文は変更/修正2点のみ。CI/配布物照合後に公開・短い返信を行う。署名キーは既存を維持し、公開APK/キー/生ログを添付しない。
+
+### v0.3.5公開・返信完了（2026-11-13）
+
+- コードcommit `cf964a6f4c2239015b678e9ad1b5f0d6e53ec5b0` のCI `43244021175` が成功。CI生成MPPが実APK生成・検証に使用したMPPとバイト一致した後にタグを作成。Release `43244474608` も成功し、[v0.3.5](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.5)を公開した。
+- 公開MPPを再ダウンロードし、182391 bytes、SHA256 `c8fde8dad57baba664fd8a8f948125fdeca77165b20a0cba37ad73b9ba771778`で一致。SHA256SUMSのMPP/更新JSONも照合済み。mainの更新JSONは0.3.5へ反映。本文は修正点2項目だけ。
+- APK入力guard追加後のManager最終マトリクスも23/23成功。証拠はMacのlocal/issue8/play-store/manager-final-results、集計JSONのWindows控えはoutputs/v0.3.5-evidence。認証済UI XMLは公開しない。
+- [Issue返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6827381066)で原因と、原本両APKをsource既定選択＋任意の更新停止で再パッチする方法を短く案内。Issueは閉じていない。投稿者の実機での解消報告はまだない。
+- 専用の旧回帰AVD5580/5582は名前を確認して停止。ユーザーがログインしたPlay Store AVD5584とWindowsのscrcpy画面は維持し、アカウント/公式アプリを消去していない。実機/Tail ADB/ADBサーバーは変更・停止していない。
