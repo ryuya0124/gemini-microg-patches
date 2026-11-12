@@ -185,3 +185,13 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - コードcommit `691092193ab07f26faabd216fb1ac0fd646846b0` のCI `43202588258`、Release `43202870466` が成功。タグv0.3.3と [Release](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.3) を公開。
 - 公開MPPをダウンロードして照合。SHA256 `c7b72128b63f6f4e91b0da79dcb56200dd5369f1380bfb57d14987aebe6a929c`、171035 bytesで、実Android Managerに読み込ませて検証したMPPと完全一致。CI生成物も全29 ZIPエントリが一致。
 - Issue #8へ [短い返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6821468926) を投稿。Android12で再現と解消を確認済みと伝え、ソース更新・原本Google APKの標準選択での再パッチを案内。Issueは閉じていない。投稿者の実機での結果は未確認。
+
+## Issue #8 権限画面の追加返信・v0.3.4（2026-11-12）
+
+- [追加返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6822070486) はv0.3.3の起動成功と、Contacts→unknown actionという2つの権限画面。画像と実microG RE7.3.0を確認し、専用API31/API36 AVDで両画面・拒否後の再要求を再現した。
+- unknown actionはmicroG所有EXTENDED_ACCESSにdescriptionがなく、Androidが代替文言を使うため。Googleから宣言を上書きしない。v0.3.4は権限前に用途を説明し、後回し/Back/拒否を尊重、不足分だけ要求する。OSの文言そのものを直したとは説明しない。
+- JavaランタイムをD8→MPP内extensions/microg-permissions.bin→extendWithで統合。DialogFragmentを使い、選択はプロファイル別SharedPreferencesへ保存。すでに許可済みなら無表示。microG無効/未導入時は要求せず、有効化/導入後に試せる。
+- 最終MPPを実Android Manager2.5.0で原本へ既定10パッチ適用・書き出し。生成APKでAPI31の48/48、API36の52/52権限UI項目が成功。同一署名での上書き更新と既存UID/許可維持、部分許可、拒否、再起動、取り消し、microG再導入、日本語を検証。英日画面も目視確認した。
+- 既存回帰はDesktop生成で各API26項目、Managerの旧VerifyError比較16項目、MPP設定11項目が成功。静的検査へVerifyPermissionSetupを追加。MPP内26パッチクラスと2ランタイムクラスを検証し、JDK21/24のランタイムDEX一致も確認。
+- 実機にはインストールや設定変更をしていない。アカウント未登録AVDの検証であり、チャット/認証成功や投稿者の実機結果とは区別する。詳細・ハッシュ・コマンド・テストハーネスの修正理由は [権限UI検証記録](docs/testing/issue-8-permission-ui.md)。ローカル証拠はlocal/issue8/permission-ui/。
+- リリース本文は利用者の指示どおり変更点/修正点の2項目のみ。内部実装とテスト結果は本文に含めない。公開・返信の結果は次の追記へ記録する。

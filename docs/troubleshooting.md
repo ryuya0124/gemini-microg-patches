@@ -11,8 +11,9 @@
 | `INSTALL_FAILED_OLDER_SDK` | APKのバリアントを確認。同じ版でも既定のAPI32入力とGoogle API30／Gemini API29版がある。Android12では後者を使う。最低SDKを無理に書き換えない |
 | `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | 既存アプリと署名キーが異なる。既存キーを使い直す。スクリプトは自動アンインストールしない |
 | ログインできない | 同じプロファイル内にmicroGとアカウントがあるか、初回権限を許可したか確認 |
-| 権限に「不明な操作の実行」と表示される | microG 7.0.0の `app.revanced.gms.EXTENDED_ACCESS` の表示。アカウント同期に必要 |
+| 権限に「不明な操作の実行」と表示される | microG REのアカウント用権限。7.3.0でも再現。microG側に説明文がないためのAndroid標準表示で、v0.3.4から用途を事前に説明する |
 | 「連絡先とアカウント」の権限画面 | GET_ACCOUNTSの権限グループ表示。READ_CONTACTSを追加したわけではない |
+| 初回の権限を後回し/拒否した | v0.3.4以降は繰り返し要求しない。許可する場合は同じプロファイル内のGoogle (Morphe)のアプリ情報→権限を開き、アカウント用権限を変更する |
 | Webに転送される | Work Profileトランポリンパッチの適用結果を確認 |
 | 利用できません `(19)` | WorkProfileEligibilityパッチの適用を確認。ユーザー150で許可ログが出るか確認 |
 | Secure Folder内をADBで起動できない | Samsungの制約。フォルダ内でGemini (Morphe)を手動起動 |
