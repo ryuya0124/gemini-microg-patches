@@ -1,5 +1,11 @@
 # 引き継ぎメモ
 
+## 2026-11-13 診断専用branch
+
+このbranchは公開v0.3.5から分離した `diagnostics/issue8-logs`。Issue #8の会話更新警告は未再現・原因未特定で、通常の修正リリースは保留。ユーザーの提案で、報告者が自分の署名・既存データを維持して適用できる診断MPPを追加した。手順は [docs/diagnostics.md](docs/diagnostics.md)、詳細な検証・観測の限界・次の解析は [diagnostics/README.md](diagnostics/README.md)。Google17.72.17.ve.arm64のみ対象。
+
+Android12で通常会話の継続、native疑似1086のログ記録とcanary非流出、Android版Morphe標準選択での生成・起動・実際のJSON保存、CIとのMPPハッシュ一致を確認。疑似エラーと手動マーカーはIssue不具合の再現ではない。旧observerにはRETURN分岐でログが飛ぶ穴があり、statusログ無しを除外根拠にしない。通常feed・stable v0.3.5・Galaxyは変更しない。APKや署名キー、個人ログは配布しない。
+
 更新: 2026-11-13（最新の追記は末尾）
 
 ## リリース本文の方針
