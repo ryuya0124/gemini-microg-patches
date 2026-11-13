@@ -33,6 +33,20 @@ if mode=='schema':
     lines.extend(['ROOTS=Collections.unmodifiableMap(m);','}','}'])
     (out/'runtime/Schema.java').write_text('\n'.join(lines)+'\n')
     (out/'resources/diagnostics/profile.json').write_bytes((root/'diagnostics/profiles'/metadata['profile']).read_bytes())
+    # Use only the Java standard library in Android Manager's external patch host.
+    # JSON remains the owning profile; this derived resource has no new runtime dependency.
+    properties={k:v for k,v in profile.items() if isinstance(v,str)}
+    for section in ['methods','incomingTypes','expectedSites']:
+        properties.update({section+'.'+k:str(v) for k,v in profile[section].items()})
+    properties['versionFields.count']=str(len(profile['versionFields']))
+    for i,(field,observer) in enumerate(profile['versionFields'].items()):
+        properties['versionFields.'+str(i)+'.field']=field
+        properties['versionFields.'+str(i)+'.observer']=observer
+    properties['capabilityFields.count']=str(len(profile['capabilityFields']))
+    for i,field in enumerate(profile['capabilityFields']):properties['capabilityFields.'+str(i)]=field
+    for k,v in properties.items():
+        assert re.fullmatch(r'[A-Za-z0-9_.]+',k) and v.isascii() and not any(c in v for c in '\r\n\\')
+    (out/'resources/diagnostics/profile.properties').write_text(''.join(k+'='+v+'\n' for k,v in sorted(properties.items())),encoding='ascii')
 elif mode=='merge':
     entries={}
     for source in [root/'build/gemini-patches.jar',out/'addon.jar']:

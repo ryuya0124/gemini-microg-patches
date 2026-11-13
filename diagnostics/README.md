@@ -41,7 +41,7 @@ No raw packets, account identifiers, chat text, titles, URLs, exception messages
 
 Private Mac evidence: `local/verification/auth-fixed/`, `build-inventory.json`, clean-build.log and the patched-DEX checks. Synthetic results must never be described as an actual server rejection or the reporter's defect. Older private observers' absence of status/classification logs is inconclusive because of the branch-label logging gap described above.
 
-The first Android Manager patch attempt was killed with the 2 GiB emulator configuration. At 4 GiB, Manager 2.5.0/Patcher 2.3.0 exposed a JSON ABI mismatch: a call compiled against `Json.Default.parseToJsonElement` was absent in its newer serialization dependency. Use an explicitly typed `Json` instance instead of the Default receiver. The diagnostic source is being rebuilt/rechecked after this packaging-side correction; the runtime observers are unchanged.
+The first Android Manager patch attempt was killed with the 2 GiB emulator configuration. At 4 GiB, Manager 2.5.0/Patcher 2.3.0 exposed that its external JVM host does not provide the desktop JSON implementation: `Json.Default.parseToJsonElement` failed, and changing to an explicit Json builder then failed with missing JsonBuilder. The final implementation derives a Java Properties resource from the owning JSON during packaging and loads it using only the Java standard library. No new JSON dependency is required. The runtime observers are unchanged.
 
 ## Remaining before diagnostic publication
 

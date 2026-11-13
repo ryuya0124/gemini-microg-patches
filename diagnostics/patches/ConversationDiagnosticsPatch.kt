@@ -10,16 +10,17 @@ import app.morphe.patches.google.common.automaticCloneSetupPatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.*
 import com.android.tools.smali.dexlib2.iface.Method
-import kotlinx.serialization.json.*
+import java.util.Properties
 
 private object Payload
-// Resolve against Json, not Json.Default: Android Manager ships a newer JSON ABI.
-private val profileJson: Json = Json {}
+// Manager's external JVM host does not expose the desktop JSON implementation.
+// package.py derives this resource from the owning JSON profile during the build.
 private val profile by lazy {
-    profileJson.parseToJsonElement(checkNotNull(Payload::class.java.getResourceAsStream("/diagnostics/profile.json"))
-        .bufferedReader().use { it.readText() }).jsonObject
+    Properties().apply { checkNotNull(Payload::class.java.getResourceAsStream("/diagnostics/profile.properties")).use { load(it) } }
 }
-private fun value(name: String) = profile.getValue(name).jsonPrimitive.content
+private fun value(name: String) = checkNotNull(profile.getProperty(name)) { "Missing diagnostic profile key $name" }
+private fun section(name: String) = profile.stringPropertyNames().filter { it.startsWith("$name.") }
+    .associate { it.removePrefix("$name.") to value(it) }
 private const val HELPER = "Lapp/geminipatch/diagnostics/Capture;"
 private fun id(m: Method) = "${m.definingClass}->${m.name}(${m.parameterTypes.joinToString("")})${m.returnType}"
 
@@ -66,10 +67,10 @@ val conversationDiagnosticsPatch = bytecodePatch(
     dependsOn(diagnosticsScreen)
     extendWith(java.util.function.Supplier { checkNotNull(Payload::class.java.getResourceAsStream("/extensions/conversation-diagnostics.bin")) })
     execute {
-        val methods = profile.getValue("methods").jsonObject.mapValues { it.value.jsonPrimitive.content }
-        val versions = profile.getValue("versionFields").jsonObject.mapValues { it.value.jsonPrimitive.content }
-        val caps = profile.getValue("capabilityFields").jsonArray.map { it.jsonPrimitive.content }.toSet()
-        val roots = profile.getValue("incomingTypes").jsonObject.keys.map { "L$it;" }.toSet()
+        val methods = section("methods")
+        val versions = (0 until value("versionFields.count").toInt()).associate { value("versionFields.$it.field") to value("versionFields.$it.observer") }
+        val caps = (0 until value("capabilityFields.count").toInt()).map { value("capabilityFields.$it") }.toSet()
+        val roots = section("incomingTypes").keys.map { "L$it;" }.toSet()
         val counts = mutableMapOf<String, Int>()
         val rootCounts = mutableMapOf<String, Int>()
         val activity = value("activity")
@@ -120,7 +121,7 @@ val conversationDiagnosticsPatch = bytecodePatch(
                 check(m.implementation!!.registerCount == registers)
             }
         }
-        for ((name, expected) in profile.getValue("expectedSites").jsonObject) check(counts[name] == expected.jsonPrimitive.int) { "Diagnostic hook count changed: $name ${counts[name]} vs $expected" }
+        for ((name, expected) in section("expectedSites")) check(counts[name] == expected.toInt()) { "Diagnostic hook count changed: $name ${counts[name]} vs $expected" }
         check(rootCounts.keys == roots) { "Diagnostic response schema disappeared: ${roots - rootCounts.keys}" }
         println("[ConversationDiagnostics] Hook sites=$counts; schema casts=$rootCounts; original register counts retained")
     }
