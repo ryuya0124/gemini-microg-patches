@@ -70,6 +70,14 @@ object VersionHookRegistry {
         check(profiles.map { it.packageName to it.versionName }.distinct().size == profiles.size)
     }
 
+    /** Display only the exact versions supported by the unchanged base algorithms. */
+    fun compatibilityFor(vararg packageNames: String): Array<Pair<String, Set<String>>> =
+        packageNames.map { packageName ->
+            val versions = profiles.filter { it.packageName == packageName }.map { it.versionName }.toSet()
+            check(versions.isNotEmpty())
+            packageName to versions
+        }.toTypedArray()
+
     fun findProfile(packageName: String, versionName: String): AppVersionProfile? =
         profiles.singleOrNull { it.packageName == packageName && it.versionName == versionName }
 

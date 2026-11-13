@@ -26,7 +26,7 @@ val googleAppManifestPatch = resourcePatch(
     description = "アプリ表示名を 'Google (Morphe)' に変更し、MicroG可視性を付与し、Split制約解除とクラッシュレシーバー無効化を行います。",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
 
     execute {
         VersionHookRegistry.requireProfile(packageMetadata)
@@ -152,7 +152,7 @@ val gmsCoreBytecodePatch = bytecodePatch(
     description = "Redirects GMS package/permissions/provider references to app.revanced.android.gms. Tested with microG RE 7.3.0; the previous 7.0.0 title was not a version requirement.",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
 
     execute {
         VersionHookRegistry.requireProfile(packageMetadata)
@@ -285,7 +285,7 @@ val gmsSignatureBypassPatch = bytecodePatch(
     description = "Google Play Services の署名不一致 (SERVICE_INVALID) や可用性チェックを常時成功 (SUCCESS / true) にバイパスします。",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
 
     execute {
         VersionHookRegistry.requireProfile(packageMetadata)

@@ -36,7 +36,7 @@ val processNameSanitizePatch = bytecodePatch(
     description = "クローン環境下でプロセス名から .morphe を自動除去し、Dagger DI コンポーネントの初期化クラッシュを防止します。",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
 
     execute {
         val spec = VersionHookRegistry.target(HookId.PROCESS_NAME_REDIRECT, packageMetadata)

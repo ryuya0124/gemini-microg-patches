@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.geminipatch.diagnosticstest">
+  <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36" />
+  <application android:label="Gemini diagnostics emulator probe" />
+  <instrumentation android:name="app.geminipatch.diagnosticstest.NativeCaptureProbe" android:targetPackage="com.google.android.googlequicksearchbox.morphe" />
+</manifest>

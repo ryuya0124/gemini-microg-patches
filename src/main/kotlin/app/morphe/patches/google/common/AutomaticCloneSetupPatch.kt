@@ -31,7 +31,7 @@ val automaticCloneSetupPatch = resourcePatch(
     description = "Automatically creates the fixed .morphe clone and isolates its permissions and providers. No official Clone app or Expert mode configuration is required.",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox", "com.google.android.apps.bard")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox", "com.google.android.apps.bard"))
     var input: CloneManifestInput? = null
 
     execute {

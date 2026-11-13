@@ -20,7 +20,7 @@ val googleAppCloneFixPatch = bytecodePatch(
     description = "Redirects Google package and owned permission references to .morphe. Automatic Clone Setup handles package, permission and provider isolation with the default selection.",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
     dependsOn(googleClonePermissionSupport)
 
     execute {

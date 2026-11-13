@@ -21,7 +21,7 @@ val universalUpdateCompatibilityPatch = bytecodePatch(
     description = "Keeps Google and Gemini version checks working when Disable Play Store updates is also selected.",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox", "com.google.android.apps.bard")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox", "com.google.android.apps.bard"))
     var ownPackage: String? = null
     execute {
         VersionHookRegistry.requireProfile(packageMetadata)

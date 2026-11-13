@@ -16,7 +16,7 @@ val bypassWorkProfilePatch = bytecodePatch(
     description = "セキュアフォルダ（Work Profile）環境下でGeminiネイティブUIの起動を拒否しWeb版へリダイレクトする制限をバイパスします。",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
 
     execute {
         val pkgName = packageMetadata.packageName

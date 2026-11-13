@@ -1,0 +1,50 @@
+{
+  "packageName": "com.google.android.googlequicksearchbox",
+  "versionName": "17.72.17.ve.arm64",
+  "versionCode": "301831138",
+  "build": "0.3.5-diagnostics.1",
+  "activity": "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/main/MainActivity;",
+  "application": "com.google.android.apps.gsa.binaries.velvet.app.VelvetMultiprocessRoot_Application",
+  "statusType": "ggmf",
+  "errorEnum": "geec",
+  "capabilitiesType": "gfcc",
+  "incomingTypes": {
+    "gfnf": "parsed_conversation_metadata",
+    "gfnl": "parsed_conversation_turn",
+    "gigv": "parsed_stream_frame",
+    "gigj": "parsed_stream_context",
+    "gihc": "parsed_stream_operation",
+    "giha": "parsed_stream_content"
+  },
+  "methods": {
+    "init": "Lwry;->onCreate()V",
+    "stream": "Laomg;->b(Lgigv;Lhiiq;)Ljava/lang/Object;",
+    "status": "Latuc;->a(Ljava/lang/Throwable;)Lggmf;",
+    "classified": "Latuf;->b(Ljava/lang/Throwable;)Ljava/lang/String;",
+    "readOnly": "Lbean;->ah(Lbdya;)V"
+  },
+  "versionFields": {
+    "Lggjj;->c:Ljava/lang/String;": "version",
+    "Lgrpe;->f:Ljava/lang/String;": "requestVersion"
+  },
+  "capabilityFields": ["Lggjl;->l:Lgfcc;"],
+  "expectedSites": {
+    "init": 1,
+    "attach": 1,
+    "stream": 1,
+    "status": 1,
+    "classified": 6,
+    "readOnly": 1,
+    "capabilities": 2,
+    "version": 1,
+    "requestVersion": 5
+  },
+  "analysis": [
+    "API30 original and Store original have identical fourteen DEX files; source version/code remain guarded.",
+    "aomg.b receives gigv; the opposite outgoing stream must not be labeled as received data.",
+    "atuc.a reads grpc-status-details-bin and RobinStatus Any; ggmf.c is the wire error and ggmf.d the server message.",
+    "gfnf metadata schema matches the later gsap schema; gfnl is the corresponding native conversation-turn proto.",
+    "MainActivity receives the observer at method entry, while p0 still aliases the Activity; register counts never increase.",
+    "Manifest Application inherits onCreate through wsg -> wsa -> wsc -> wry. The wry entry initializes the observer context in every Google app process."
+  ]
+}

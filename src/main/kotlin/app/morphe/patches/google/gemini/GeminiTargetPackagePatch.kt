@@ -43,7 +43,7 @@ val geminiTargetPackagePatch = bytecodePatch(
     description = "Gemini アプリからの連携先 Google アプリをクローン版（com.google.android.googlequicksearchbox.morphe）へリダイレクトします。",
     default = true
 ) {
-    compatibleWith("com.google.android.apps.bard")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.apps.bard"))
     dependsOn(geminiPackageVisibilityPatch, geminiClonePermissionSupport)
 
     execute {
@@ -103,7 +103,7 @@ val geminiStandalonePatch = app.morphe.patcher.patch.resourcePatch(
     description = "Geminiのsplit APK制約を除去します。Gemini本体機能には別途クローン版Googleアプリが必要です。",
     default = true
 ) {
-    compatibleWith("com.google.android.apps.bard")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.apps.bard"))
 
     execute {
         VersionHookRegistry.requireProfile(packageMetadata)
