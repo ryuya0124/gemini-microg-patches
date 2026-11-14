@@ -1,5 +1,11 @@
 # 引き継ぎメモ
 
+## 2026-11-14 診断ログの取りこぼし修正
+
+ユーザーの依頼でdiagnostics2を実装。旧版で履歴5000件を集中させるとturn/stream/capabilities/requestVersionが欠落することをAndroid12で再現し、修正版では保持・予期しない欠落0を確認。履歴snapshotを種類別にまとめる有界キュー、process別summary/停止確認、file lock競合時のbackground待機、警告setterの固定class/methodとview ID記録を追加。Morpheが元Google名までcloneへ書き換えていたinventory不具合を診断namespace除外で修正。詳細・制約・最終hashは [diagnostics/logging-v2-2026-11-14.md](diagnostics/logging-v2-2026-11-14.md)。
+
+原因調査ではWeb起点の同じ自作会話をGoogle17.72.17で継続し、元Geminiあり/実際にuser0から削除の両条件で返答成功。capability9の有無は期待どおり変わったが、報告者の警告は未再現。この差だけで原因・修正を断定しない。最終版はnative表示処理の実呼び出し元記録・canary非流出・Morphe標準12選択からの生成/起動/JSON保存・CI一致を確認。途中でOSがempty processを終了したケースもincomplete=trueとして正しく残した。元APK/UID/アカウントは復元、Galaxy未操作。通常修正版は依然保留。
+
 ## 2026-11-14 報告者から初回診断ログ到着
 
 [Issue返信6865648676](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6865648676) の添付JSONを解析。Android12・Google17.72.17・Gemini1.0.995038376。11.388秒で警告文の自動検出あり、手動マーカーではない。一方、native processのqueueDroppedが1356に達しており、status/streamイベント無しからサーバー応答を除外できない。Stopの0件はUI processだけの値でglobal summaryではない。原Googleのinventoryキーも欠落しており、未インストールとは判断不可。詳細と次の解析手順は [diagnostics/reporter-log-2026-11-14.md](diagnostics/reporter-log-2026-11-14.md)。受領のお礼と調査中であることを短く返信し、追加質問はしていない。警告の原因特定・再現・修正には至っておらず、stable/診断版の新リリースはしていない。

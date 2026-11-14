@@ -93,7 +93,7 @@ public final class NativeCaptureProbe extends Instrumentation {
             } finally { release.countDown(); }
             if(stress){
                 stage="native_text_setter";
-                final Method setter=l.loadClass("tm").getMethod("o",android.widget.TextView.class,CharSequence.class);
+                final Method setter=l.loadClass("tm").getDeclaredMethod("o",android.widget.TextView.class,CharSequence.class);
                 setter.setAccessible(true);
                 final String warningText="Conversation requires an update. "+canary;
                 final boolean[] unchanged={false};
