@@ -27,7 +27,7 @@ public final class CaptureActivity extends Activity {
         int pad = (int) (20 * getResources().getDisplayMetrics().density); column.setPadding(pad, pad, pad, pad);
         TextView title = new TextView(this); title.setText("Gemini diagnostics"); title.setTextSize(24); column.addView(title);
         TextView info = new TextView(this);
-        info.setText("Records technical app versions, feature flags, response/error codes and whether the update-warning text was detected.\n\nChat text, email addresses, conversation IDs, credentials and URLs are not saved. Nothing is uploaded automatically.\n\nStart capture, open the affected chat, then return here and save the JSON report. Recording stops after 15 minutes. Starting again replaces the previous report.");
+        info.setText("Records technical app versions, feature flags, response/error codes, app code/view identifiers and whether the update-warning text was detected.\n\nChat text, email addresses, conversation IDs, credentials and URLs are not saved. Nothing is uploaded automatically.\n\nStart capture, open the affected chat, then return here and save the JSON report. Recording stops after 15 minutes. Starting again replaces the previous report.");
         info.setTextSize(16); info.setPadding(0, pad, 0, pad); column.addView(info);
         status = new TextView(this); status.setTextSize(16); column.addView(status);
         button(column, "Start capture", new android.view.View.OnClickListener() { public void onClick(android.view.View v) { Capture.start(CaptureActivity.this, false, reply); }});

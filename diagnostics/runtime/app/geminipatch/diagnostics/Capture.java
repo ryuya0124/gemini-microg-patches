@@ -28,10 +28,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class Capture {
     public interface Reply { void done(boolean ok, String message); }
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
-    // Observations are bounded separately. FIFO keeps Stop/Save behind prior error events.
+    // FIFO preserves per-process ordering; admission is fair between observation kinds.
     private static final LinkedBlockingDeque<Runnable> TASKS = new LinkedBlockingDeque<Runnable>();
     private static final AtomicInteger DROPPED = new AtomicInteger();
-    private static final AtomicInteger NORMAL_PENDING = new AtomicInteger(), IMPORTANT_PENDING = new AtomicInteger();
+    private static final ThreadLocal<Long> OBSERVED_AT = new ThreadLocal<Long>();
+    private static final CaptureInbox INBOX = new CaptureInbox(new CaptureInbox.Dispatch() {
+        public void post(Runnable r) { TASKS.offerLast(r); }
+    }, new CaptureInbox.Execute() { public void run(long generation, long at, Runnable r) {
+        if (generation != started) return;
+        OBSERVED_AT.set(at); try { r.run(); } finally { OBSERVED_AT.remove(); }
+    }});
     private static final Map<String, Integer> COUNTERS = new HashMap<String, Integer>();
     private static final Set<String> SEEN = new HashSet<String>();
     private static volatile Context context;
@@ -40,7 +46,10 @@ public final class Capture {
     private static volatile String state = "Capture is off.";
     private static Thread worker;
     private static volatile long started;
+    private static volatile long localStopRequest;
     private static long until, refreshed;
+    private static long stoppedAt, summaryRevision = -1, summaryStoppedAt = -1;
+    private static int summaryDropped = -1;
     private static boolean synthetic;
     private static final int NORMAL_LIMIT = 192 * 1024, HARD_LIMIT = 256 * 1024;
     private static final long DURATION = 15 * 60 * 1000;
@@ -55,8 +64,9 @@ public final class Capture {
         worker = new Thread(new Runnable() { public void run() {
             for (;;) try {
                 refresh();
-                Runnable task = TASKS.poll(500, java.util.concurrent.TimeUnit.MILLISECONDS);
+                Runnable task = TASKS.poll(100, java.util.concurrent.TimeUnit.MILLISECONDS);
                 if (task != null) task.run();
+                checkpoint(false);
             } catch (Throwable ignored) { state = "A diagnostic operation could not complete."; }
         }}, "GeminiPatch-diagnostics");
         worker.setDaemon(true); worker.start();
@@ -65,13 +75,9 @@ public final class Capture {
         if (worker == null) return;
         TASKS.offerLast(task);
     }
-    private static void observed(final Runnable task, boolean important) {
-        final long generation = started;
-        final AtomicInteger pending = important ? IMPORTANT_PENDING : NORMAL_PENDING;
-        if (pending.incrementAndGet() > (important ? 16 : 24)) { pending.decrementAndGet(); DROPPED.incrementAndGet(); return; }
-        enqueue(new Runnable() { public void run() {
-            try { if (active && generation == started) task.run(); } finally { pending.decrementAndGet(); }
-        }}, false);
+    private static void observed(String kind, final Runnable task, boolean important, boolean merge) {
+        if (worker == null || !active) return;
+        INBOX.offer(started, System.currentTimeMillis(), kind, important, merge, task);
     }
     private static void reply(final Reply r, final boolean ok, final String message) {
         if (r != null) MAIN.post(new Runnable() { public void run() { r.done(ok, message); }});
@@ -92,34 +98,75 @@ public final class Capture {
     }
     private static void refresh() throws Exception {
         long now = SystemClock.elapsedRealtime();
-        if (now - refreshed < 500 || folder == null) return;
+        if (now - refreshed < 100 || folder == null) return;
         refreshed = now;
         JSONObject control = read(file("control.json"));
         long begin = control.optLong("started", 0);
-        if (begin != started) { started = begin; COUNTERS.clear(); SEEN.clear(); DROPPED.set(0); }
-        until = control.optLong("until", 0); synthetic = control.optBoolean("synthetic", false);
-        active = started > 0 && System.currentTimeMillis() < until;
+        if (begin != started) {
+            started = begin; localStopRequest = 0; COUNTERS.clear(); SEEN.clear(); DROPPED.set(0); INBOX.reset(begin);
+            summaryRevision = summaryStoppedAt = -1; summaryDropped = -1;
+        }
+        until = control.optLong("until", 0); stoppedAt = control.optLong("stoppedAt", 0); synthetic = control.optBoolean("synthetic", false);
+        active = started > 0 && localStopRequest == 0 && System.currentTimeMillis() < until;
         state = active ? "Recording technical diagnostics (up to 15 minutes)." : (started > 0 ? "Capture stopped. You can save the report." : "Capture is off.");
     }
+    private static void checkpoint(boolean force) throws Exception {
+        if (started <= 0 || folder == null) return;
+        long revision = INBOX.revision(); int dropped = DROPPED.get();
+        if (!force && revision == summaryRevision && dropped == summaryDropped && stoppedAt == summaryStoppedAt) return;
+        JSONObject summary = new JSONObject().put("process", Process.myPid()).put("generation", started)
+                .put("pending", INBOX.pending()).put("stopAcknowledged", stoppedAt > 0 && INBOX.pending() == 0)
+                .put("observerLost", INBOX.lost() + dropped).put("otherDropped", dropped)
+                .put("admission", new JSONObject(INBOX.counters())).put("processedCounters", new JSONObject(COUNTERS));
+        folder.mkdirs();
+        try (RandomAccessFile l = new RandomAccessFile(file("capture.lock"), "rw"); FileChannel ch = l.getChannel(); FileLock lock = ch.lock()) {
+            if (read(file("control.json")).optLong("started") != started) return;
+            write(file("process-" + Process.myPid() + ".json"), summary);
+        }
+        summaryRevision = revision; summaryDropped = dropped; summaryStoppedAt = stoppedAt;
+    }
+    private static JSONArray processSummaries(long generation) throws Exception {
+        JSONArray records = new JSONArray(); File[] files = folder.listFiles(); if (files == null) return records;
+        Arrays.sort(files);
+        for (File f : files) if (f.getName().matches("process-[0-9]+\\.json")) {
+            if (records.length() >= 64) throw new IOException();
+            JSONObject value = read(f); if (value.optLong("generation") == generation) { value.remove("generation"); records.put(value); }
+        }
+        return records;
+    }
+    private static boolean acknowledged(JSONArray records) throws Exception {
+        if (records.length() == 0) return false;
+        for (int i = 0; i < records.length(); i++) if (!records.getJSONObject(i).optBoolean("stopAcknowledged")) return false;
+        return true;
+    }
+    private static void awaitProcesses() throws Exception {
+        long end = SystemClock.elapsedRealtime() + 3000;
+        do {
+            if (acknowledged(processSummaries(started))) return;
+            Thread.sleep(50);
+        } while (SystemClock.elapsedRealtime() < end);
+    }
     private static JSONObject event(String name) throws Exception {
-        return new JSONObject().put("event", name).put("milliseconds", Math.max(0, System.currentTimeMillis() - started))
+        Long observed = OBSERVED_AT.get();
+        return new JSONObject().put("event", name).put("milliseconds", Math.max(0, (observed == null ? System.currentTimeMillis() : observed) - started))
                 .put("process", Process.myPid()).put("syntheticTest", synthetic);
     }
     private static void append(JSONObject value, boolean important) {
-        if (!active) return;
+        if (started <= 0) return;
         try {
             folder.mkdirs();
-            try (RandomAccessFile lockFile = new RandomAccessFile(file("capture.lock"), "rw"); FileChannel channel = lockFile.getChannel(); FileLock lock = channel.tryLock()) {
-                if (lock == null) { DROPPED.incrementAndGet(); return; }
+            // Wait only on the background worker. A competing process must not silently lose a record.
+            try (RandomAccessFile lockFile = new RandomAccessFile(file("capture.lock"), "rw"); FileChannel channel = lockFile.getChannel(); FileLock lock = channel.lock()) {
                 JSONObject control = read(file("control.json"));
-                if (control.optLong("started") != started || System.currentTimeMillis() >= control.optLong("until")) return;
+                long cutoff = control.has("stoppedAt") ? control.optLong("stoppedAt") : control.optLong("until");
+                if (control.optLong("started") != started || started + value.optLong("milliseconds") > cutoff) return;
                 File events = file("events.jsonl");
-                value.put("queueDropped", DROPPED.get());
+                value.put("queueDropped", INBOX.lost()).put("otherDropped", DROPPED.get());
                 byte[] data = (value.toString() + "\n").getBytes(StandardCharsets.UTF_8);
-                if (events.length() + data.length > (important ? HARD_LIMIT : NORMAL_LIMIT)) { DROPPED.incrementAndGet(); return; }
+                if (events.length() + data.length > (important ? HARD_LIMIT : NORMAL_LIMIT)) { INBOX.loss("event_budget"); return; }
                 try (OutputStream o = new FileOutputStream(events, true)) { o.write(data); }
             }
-        } catch (Throwable ignored) { DROPPED.incrementAndGet(); }
+        } catch (Throwable ignored) { INBOX.loss("file_io"); }
     }
     private static boolean sample(String kind) {
         int count = COUNTERS.containsKey(kind) ? COUNTERS.get(kind) + 1 : 1;
@@ -139,9 +186,11 @@ public final class Capture {
                     JSONObject control = new JSONObject().put("started", now).put("until", now + DURATION).put("synthetic", test);
                     write(file("control.json"), control);
                     try (OutputStream clear = new FileOutputStream(file("events.jsonl"))) { /* New opt-in capture replaces the previous report. */ }
+                    File[] old = folder.listFiles(); if (old != null) for (File f : old)
+                        if (f.getName().matches("process-[0-9]+\\.json(?:\\.pending)?")) f.delete();
                 }
                 refreshed = 0; refresh();
-                JSONObject header = event("capture_started").put("reportSchema", 1).put("diagnosticBuild", Schema.BUILD)
+                JSONObject header = event("capture_started").put("reportSchema", 2).put("diagnosticBuild", Schema.BUILD)
                         .put("basePatchVersion", "0.3.5").put("sourceGoogleVersion", Schema.VERSION).put("sourceGoogleCode", Schema.CODE)
                         .put("androidApi", Build.VERSION.SDK_INT).put("durationLimitSeconds", DURATION / 1000)
                         .put("maximumEventBytes", HARD_LIMIT);
@@ -165,14 +214,22 @@ public final class Capture {
         }}, true);
     }
     public static void stop(Context c, final Reply callback) {
-        init(c); enqueue(new Runnable() { public void run() {
+        init(c); final long requestedAt = System.currentTimeMillis(); localStopRequest = requestedAt; active = false;
+        enqueue(new Runnable() { public void run() {
             try {
                 folder.mkdirs();
-                append(event("capture_stopped").put("observedCounters", new JSONObject(COUNTERS)), true);
                 try (RandomAccessFile l = new RandomAccessFile(file("capture.lock"), "rw"); FileChannel ch = l.getChannel(); FileLock lock = ch.lock()) {
-                    JSONObject control = read(file("control.json")); control.put("until", 0); write(file("control.json"), control);
+                    JSONObject control = read(file("control.json"));
+                    if (!control.has("stoppedAt")) {
+                        long deadline = control.optLong("until", requestedAt);
+                        control.put("stoppedAt", deadline > 0 ? Math.min(requestedAt, deadline) : requestedAt);
+                    }
+                    control.put("until", 0); write(file("control.json"), control);
                 }
-                refreshed = 0; refresh(); reply(callback, true, "Capture stopped.");
+                refreshed = 0; refresh();
+                append(event("capture_stopped").put("milliseconds", Math.max(0, stoppedAt - started)), true);
+                checkpoint(true); awaitProcesses();
+                reply(callback, true, "Capture stopped.");
             } catch (Throwable ignored) { reply(callback, false, "Could not stop capture. It expires after 15 minutes."); }
         }}, true);
     }
@@ -187,6 +244,8 @@ public final class Capture {
                     boolean ok = (!file("control.json").exists() || file("control.json").delete()) && (!file("events.jsonl").exists() || file("events.jsonl").delete())
                             && (!file("control.json.pending").exists() || file("control.json.pending").delete());
                     if (!ok) throw new IOException();
+                    File[] old = folder.listFiles(); if (old != null) for (File f : old)
+                        if (f.getName().matches("process-[0-9]+\\.json(?:\\.pending)?")) if (!f.delete() && f.exists()) throw new IOException();
                 }
                 refreshed = 0; refresh(); reply(callback, true, "Report deleted.");
             } catch (Throwable ignored) { reply(callback, false, "Could not delete the report. Try again."); }
@@ -196,16 +255,30 @@ public final class Capture {
         init(c); enqueue(new Runnable() { public void run() {
             try {
                 folder.mkdirs();
-                JSONObject report = new JSONObject().put("schema", 1).put("build", Schema.BUILD);
+                checkpoint(true);
+                if (stoppedAt > 0) awaitProcesses();
+                JSONObject report = new JSONObject().put("schema", 2).put("build", Schema.BUILD);
                 JSONArray events = new JSONArray();
                 try (RandomAccessFile l = new RandomAccessFile(file("capture.lock"), "rw"); FileChannel ch = l.getChannel(); FileLock lock = ch.lock()) {
                     JSONObject control = read(file("control.json")); report.put("syntheticTest", control.optBoolean("synthetic", false));
                     report.put("capturePresent", control.optLong("started", 0) > 0);
+                    JSONArray processes = processSummaries(control.optLong("started"));
+                    long lost = 0; for (int i = 0; i < processes.length(); i++) lost += processes.getJSONObject(i).optLong("observerLost");
+                    boolean complete = control.has("stoppedAt") && acknowledged(processes);
+                    report.put("processes", processes).put("allStoppedProcessesAcknowledged", complete)
+                            .put("minimumObservedLoss", lost).put("incomplete", !complete || lost > 0);
                     if (file("events.jsonl").length() > HARD_LIMIT) throw new IOException();
                     if (file("events.jsonl").isFile()) try (BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(file("events.jsonl")), StandardCharsets.UTF_8))) {
                         String line; while ((line = in.readLine()) != null) events.put(new JSONObject(line));
                     }
                 }
+                JSONArray processes = report.getJSONArray("processes"); Set<Integer> registered = new HashSet<Integer>();
+                for (int i = 0; i < processes.length(); i++) registered.add(processes.getJSONObject(i).getInt("process"));
+                for (int i = 0; i < events.length(); i++) {
+                    int pid = events.getJSONObject(i).getInt("process");
+                    if (registered.add(pid)) processes.put(new JSONObject().put("process", pid).put("summaryMissing", true).put("stopAcknowledged", false));
+                }
+                if (!acknowledged(processes)) report.put("allStoppedProcessesAcknowledged", false).put("incomplete", true);
                 report.put("events", events);
                 try (OutputStream o = context.getContentResolver().openOutputStream(destination, "wt")) {
                     if (o == null) throw new IOException(); o.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
@@ -222,10 +295,9 @@ public final class Capture {
     }
     public static void incoming(final Object value) {
         if (!active || value == null || !Schema.ROOTS.containsKey(value.getClass().getName())) return;
-        observed(new Runnable() { public void run() {
-            if (!active) return;
+        final String kind = Schema.ROOTS.get(value.getClass().getName());
+        observed("incoming:" + kind, new Runnable() { public void run() {
             try {
-                String kind = Schema.ROOTS.get(value.getClass().getName());
                 Class<?> lite = value.getClass().getClassLoader().loadClass("com.google.protobuf.MessageLite");
                 int size = ((Integer) lite.getMethod("getSerializedSize").invoke(value)).intValue();
                 boolean scanned = size >= 0 && size <= 1024 * 1024, hit = false;
@@ -237,16 +309,16 @@ public final class Capture {
                 if (hit || emit) append(event("parsed_message").put("schema", kind).put("observedCount", COUNTERS.get("parsed:" + kind))
                         .put("knownWarningText", hit).put("textScanPerformed", scanned), hit);
             } catch (Throwable ignored) { problem("parsed_message"); }
-        }}, false);
+        }}, kind.equals("parsed_conversation_turn"), !kind.equals("parsed_conversation_turn"));
     }
     public static void stream(Object value) {
         if (!active) return;
-        observed(new Runnable() { public void run() { try { if (sample("stream")) append(event("incoming_stream").put("observedCount", COUNTERS.get("stream")), false); } catch (Throwable ignored) {} }}, false);
+        observed("stream", new Runnable() { public void run() { try { if (sample("stream")) append(event("incoming_stream").put("observedCount", COUNTERS.get("stream")), false); } catch (Throwable ignored) {} }}, true, true);
         incoming(value);
     }
     public static void status(final Object value) {
         if (!active) return;
-        observed(new Runnable() { public void run() {
+        observed(value == null ? "status_absent" : "server_status", new Runnable() { public void run() {
             try {
                 if (value == null) { if (sample("status_absent")) append(event("status_detail_absent"), false); return; }
                 if (!value.getClass().getName().equals(Schema.STATUS)) { problem("status_type"); return; }
@@ -258,11 +330,11 @@ public final class Capture {
                 append(event("server_status").put("category", category).put("wireCode", code).put("error", name)
                         .put("serverTextPresent", message != null && !message.isEmpty()).put("knownWarningText", warning(message)), true);
             } catch (Throwable ignored) { problem("server_status"); }
-        }}, true);
+        }}, value != null, value == null);
     }
     public static void capabilities(final Object value) {
         if (!active || value == null) return;
-        observed(new Runnable() { public void run() {
+        observed("capabilities", new Runnable() { public void run() {
             try {
                 if (!value.getClass().getName().equals(Schema.CAPABILITIES)) { problem("capabilities_type"); return; }
                 Object raw = value.getClass().getField("c").get(value);
@@ -281,31 +353,57 @@ public final class Capture {
                     append(event("capabilities").put("ids", new JSONArray(ids)).put("count", ids.size()), false);
                 }
             } catch (Throwable ignored) { problem("capabilities"); }
-        }}, false);
+        }}, false, false);
     }
     public static void version(final String value) {
         if (!active) return;
-        observed(new Runnable() { public void run() { try {
+        observed("version", new Runnable() { public void run() { try {
             if (value != null && value.matches("[0-9][0-9A-Za-z._-]{0,89}") && SEEN.add("version:" + value))
                 append(event("constructed_client_version").put("version", value), false);
-        } catch (Throwable ignored) { problem("constructed_client_version"); } }}, false);
+        } catch (Throwable ignored) { problem("constructed_client_version"); } }}, false, true);
     }
     public static void requestVersion(final String value) {
         if (!active) return;
-        observed(new Runnable() { public void run() { try {
+        observed("request_version", new Runnable() { public void run() { try {
             if (value != null && value.matches("[0-9][0-9A-Za-z._-]{0,89}") && SEEN.add("request_version:" + value))
                 append(event("request_client_version").put("version", value), false);
-        } catch (Throwable ignored) { problem("request_client_version"); } }}, false);
+        } catch (Throwable ignored) { problem("request_client_version"); } }}, false, true);
     }
     public static void readOnly(final Object value) {
         if (!active) return;
-        observed(new Runnable() { public void run() { try { if (sample("readonly:" + (value != null))) append(event("read_only_input").put("present", value != null), value != null); } catch (Throwable ignored) {} }}, value != null);
+        observed("readonly:" + (value != null), new Runnable() { public void run() { try { if (sample("readonly:" + (value != null))) append(event("read_only_input").put("present", value != null), value != null); } catch (Throwable ignored) {} }}, value != null, true);
     }
     public static void classified(final String value) {
         if (!active) return;
-        observed(new Runnable() { public void run() { try {
+        observed("classified:" + "UNSUPPORTED_CLIENT_TOO_OLD".equals(value), new Runnable() { public void run() { try {
             append(event("client_error_classified").put("tooOld", "UNSUPPORTED_CLIENT_TOO_OLD".equals(value)), true);
-        } catch (Throwable ignored) {} }}, true);
+        } catch (Throwable ignored) {} }}, true, true);
+    }
+    private static String codeName(String value) {
+        return value != null && value.matches("[A-Za-z0-9_.$<>-]{1,180}") ? value : "unavailable";
+    }
+    /** Native setter call sites only. No text, filenames, line numbers or exception trace is saved. */
+    public static void textSet(CharSequence value) {
+        if (!active || value == null) return;
+        try {
+            if (value.length() > 4096 || !warning(value.toString())) return;
+            final ArrayList<String> callers = new ArrayList<String>();
+            for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
+                String cls = frame.getClassName();
+                if (cls.startsWith("java.") || cls.startsWith("android.") || cls.startsWith("dalvik.") ||
+                        cls.startsWith("kotlin.") || cls.startsWith("j$.") || cls.startsWith("app.geminipatch.")) continue;
+                callers.add(codeName(cls) + "#" + codeName(frame.getMethodName()));
+                if (callers.size() == 6) break;
+            }
+            observed("warning_setter", new Runnable() { public void run() { try {
+                String key = "setter:" + callers.toString();
+                if (SEEN.add(key)) append(event("known_warning_setter").put("callers", new JSONArray(callers)), true);
+            } catch (Throwable ignored) {} }}, true, true);
+        } catch (Throwable ignored) {}
+    }
+    private static String resourceName(View view) {
+        try { return codeName(view.getResources().getResourceEntryName(view.getId())); }
+        catch (Throwable ignored) { return "unavailable"; }
     }
     public static void attach(final Activity activity) {
         try {
@@ -330,9 +428,19 @@ public final class Capture {
                     else if (id.equals("assistant_robin_text")) role = "assistant_message";
                 } catch (Throwable ignored) {}
                 final String fixedRole = role;
-                if (!role.equals("user_message")) observed(new Runnable() { public void run() { try {
-                    if (SEEN.add("visible_warning:" + fixedRole)) append(event("known_warning_text_rendered").put("role", fixedRole), true);
-                } catch (Throwable ignored) {} }}, true);
+                final String resource = resourceName(view), viewClass = codeName(view.getClass().getName());
+                final ArrayList<String> ancestors = new ArrayList<String>();
+                android.view.ViewParent parent = view.getParent();
+                for (int i = 0; i < 5 && parent instanceof View; i++) {
+                    View ancestor = (View) parent;
+                    ancestors.add(codeName(ancestor.getClass().getName()) + "#" + resourceName(ancestor));
+                    parent = ancestor.getParent();
+                }
+                if (!role.equals("user_message")) observed("visible_warning:" + fixedRole, new Runnable() { public void run() { try {
+                    if (SEEN.add("visible_warning:" + fixedRole + ":" + resource + ":" + viewClass))
+                        append(event("known_warning_text_rendered").put("role", fixedRole).put("resource", resource)
+                                .put("viewClass", viewClass).put("ancestors", new JSONArray(ancestors)), true);
+                } catch (Throwable ignored) {} }}, true, true);
             }
         }
         if (view instanceof ViewGroup) {

@@ -36,5 +36,20 @@ fun main(args:Array<String>) {
             println("All ${returns.size} $owner.$name return paths retain the observer")
         }
         check(classes.none{it.type.contains("ReducedCaps")||it.type.contains("Issue8Trace;")})
+        var setterCount=0
+        for(c in classes.filterNot{it.type.startsWith("Lapp/geminipatch/diagnostics/")})for(m in c.methods){
+            val instructions=m.implementation?.instructions?.toList()?:continue
+            for((i,ins)in instructions.withIndex()){
+                val ref=(ins as? ReferenceInstruction)?.reference?.toString()?:continue
+                if(ins.opcode !in setOf(Opcode.INVOKE_VIRTUAL,Opcode.INVOKE_VIRTUAL_RANGE)||!ref.startsWith("Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;"))continue
+                val next=instructions[i+1]
+                check(next.opcode==Opcode.INVOKE_STATIC_RANGE&&(next as ReferenceInstruction).reference.toString()=="Lapp/geminipatch/diagnostics/Capture;->textSet(Ljava/lang/CharSequence;)V")
+                val text=if(ins is RegisterRangeInstruction)ins.startRegister+1 else (ins as FiveRegisterInstruction).registerD
+                check((next as RegisterRangeInstruction).startRegister==text&&next.registerCount==1)
+                setterCount++
+            }
+        }
+        check(setterCount==1685){"Native setter sites changed: $setterCount"}
+        println("All $setterCount native TextView setters retain their value and the correct text register")
     }
 }

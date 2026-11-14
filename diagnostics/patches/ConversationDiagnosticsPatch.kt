@@ -10,6 +10,7 @@ import app.morphe.patches.google.common.automaticCloneSetupPatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.*
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import java.util.Properties
 
 private object Payload
@@ -23,6 +24,12 @@ private fun section(name: String) = profile.stringPropertyNames().filter { it.st
     .associate { it.removePrefix("$name.") to value(it) }
 private const val HELPER = "Lapp/geminipatch/diagnostics/Capture;"
 private fun id(m: Method) = "${m.definingClass}->${m.name}(${m.parameterTypes.joinToString("")})${m.returnType}"
+private fun textSetter(ins: Instruction): Boolean {
+    val ref = (ins as? ReferenceInstruction)?.reference as? MethodReference ?: return false
+    return ins.opcode in setOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL_RANGE) &&
+        ref.definingClass == "Landroid/widget/TextView;" && ref.name == "setText" &&
+        ref.parameterTypes.firstOrNull() == "Ljava/lang/CharSequence;" && ref.returnType == "V"
+}
 
 private val diagnosticsScreen = resourcePatch {
     dependsOn(automaticCloneSetupPatch)
@@ -37,6 +44,8 @@ private val diagnosticsScreen = resourcePatch {
             val activity = doc.createElement("activity")
             activity.setAttribute("android:name", "app.geminipatch.diagnostics.CaptureActivity")
             activity.setAttribute("android:exported", "true")
+            activity.setAttribute("android:taskAffinity", "app.geminipatch.diagnostics")
+            activity.setAttribute("android:launchMode", "singleTask")
             activity.setAttribute("android:label", "Gemini diagnostics")
             activity.setAttribute("android:icon", "@android:drawable/ic_menu_info_details")
             activity.setAttribute("android:theme", "@android:style/Theme.Material.Light.NoActionBar")
@@ -75,11 +84,12 @@ val conversationDiagnosticsPatch = bytecodePatch(
         val rootCounts = mutableMapOf<String, Int>()
         val activity = value("activity")
         classDefForEach { cls ->
+            if (cls.type.startsWith("Lapp/geminipatch/diagnostics/")) return@classDefForEach
             val targets = cls.methods.filter { m -> m.implementation != null && (
                 id(m) in methods.values || cls.type == activity && m.name == "onCreate" && m.parameterTypes == listOf("Landroid/os/Bundle;") ||
                     m.implementation!!.instructions.any { ins ->
                         val reference = (ins as? ReferenceInstruction)?.reference.toString()
-                        ins.opcode == Opcode.CHECK_CAST && reference in roots || ins.opcode == Opcode.IPUT_OBJECT && cls.type != "Lggjj;" && (reference in versions || reference in caps)
+                        textSetter(ins) || ins.opcode == Opcode.CHECK_CAST && reference in roots || ins.opcode == Opcode.IPUT_OBJECT && cls.type != "Lggjj;" && (reference in versions || reference in caps)
                     }) }
             if (targets.isEmpty()) return@classDefForEach
             val mutable = mutableClassDefBy(cls)
@@ -98,6 +108,10 @@ val conversationDiagnosticsPatch = bytecodePatch(
                 if (id(m) == methods["readOnly"]) observe(0, "p1", "readOnly")
                 for ((i, ins) in m.instructions.toList().withIndex()) {
                     val reference = (ins as? ReferenceInstruction)?.reference.toString()
+                    if (textSetter(ins)) {
+                        val textRegister = if (ins is RegisterRangeInstruction) ins.startRegister + 1 else (ins as FiveRegisterInstruction).registerD
+                        observe(i + 1, "v$textRegister", "textSet", "Ljava/lang/CharSequence;")
+                    }
                     if (ins.opcode == Opcode.CHECK_CAST && reference in roots) {
                         observe(i + 1, "v${(ins as OneRegisterInstruction).registerA}", "incoming")
                         rootCounts[reference] = (rootCounts[reference] ?: 0) + 1
@@ -123,6 +137,7 @@ val conversationDiagnosticsPatch = bytecodePatch(
         }
         for ((name, expected) in section("expectedSites")) check(counts[name] == expected.toInt()) { "Diagnostic hook count changed: $name ${counts[name]} vs $expected" }
         check(rootCounts.keys == roots) { "Diagnostic response schema disappeared: ${roots - rootCounts.keys}" }
+        check((counts["textSet"] ?: 0) > 0) { "Native TextView setter discovery found no sites" }
         println("[ConversationDiagnostics] Hook sites=$counts; schema casts=$rootCounts; original register counts retained")
     }
 }

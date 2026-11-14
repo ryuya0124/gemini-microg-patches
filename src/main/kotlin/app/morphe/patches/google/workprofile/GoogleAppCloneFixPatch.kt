@@ -33,6 +33,9 @@ val googleAppCloneFixPatch = bytecodePatch(
         var packageReplacements = 0
 
         for (classDef in matchingClasses) {
+            // Diagnostic inventory intentionally distinguishes original and cloned packages.
+            // Manager can fold its StringBuilder expressions into exact package literals.
+            if (classDef.type.startsWith("Lapp/geminipatch/diagnostics/")) continue
             val mutableClass = mutableClassDefBy(classDef)
             for (method in mutableClass.methods) {
                 if (method.implementation == null) continue

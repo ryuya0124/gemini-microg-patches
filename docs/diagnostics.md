@@ -6,8 +6,8 @@ This optional build helps investigate [Issue #8](https://github.com/ryuya0124/ge
 
 The diagnostic patch supports **Google `17.72.17.ve.arm64` (301831138) only**. Keep your existing original APK versions, Gemini installation, Morphe signing key and update-blocking settings. Do not switch app versions for this capture.
 
-1. Download the `.mpp` from [the diagnostic prerelease](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.5-diagnostics.1).
-2. In Morphe Manager, open Sources → Add → Select patch source files and import it locally. The source version should read `0.3.5-diagnostics.1`.
+1. Download the `.mpp` from [the diagnostic prerelease](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.5-diagnostics.2).
+2. In Morphe Manager, open Sources → Add → Select patch source files and import it locally. The source version should read `0.3.5-diagnostics.2`.
 3. Select the **original, unpatched** Google APK above. Keep this source's default selection, including **Conversation diagnostics**, and your existing optional update-blocking selection. Gemini does not need repatching for this capture.
 4. Install as an update using the same Morphe signing key. **If Android rejects the update, stop. Do not uninstall, clear data, reset microG or replace the signing key.** Those actions can lose the state needed to investigate the warning.
 
@@ -23,11 +23,11 @@ Capture is off until you start it and stops after 15 minutes. Starting a new cap
 
 ## What the report contains
 
-It contains relevant Google/Gemini package versions, Android API level, numeric capability IDs, client version strings, parsed response-schema counters, structured error codes and booleans indicating whether known warning text was detected. Process numbers and elapsed milliseconds help correlate events.
+It contains relevant Google/Gemini package versions, Android API level, numeric capability IDs, client version strings, parsed response-schema counters, structured error codes and booleans indicating whether known warning text was detected. Fixed app code/view identifiers help locate the warning. Process numbers, elapsed milliseconds and per-process capture summaries help correlate events and expose missing observations.
 
 It does **not save** conversation text, titles, account names, email addresses, conversation IDs, URLs, credentials, raw server responses or exception text. The app inspects bounded response data locally to calculate warning booleans; that data is not included in the exported report.
 
-This is a limited observer, not a complete network recording. An empty error section does not establish that the server sent no error. If the warning disappears after updating, save that report too; do not label that a verified fix.
+This is a limited observer, not a complete network recording. Repeated history/frame snapshots may be combined; the report counts these separately from unexpected losses. The report also indicates whether every observed process finished saving. An empty error section does not establish that the server sent no error. If the warning disappears after updating, save that report too; do not label that a verified fix.
 
 ## Return to stable
 

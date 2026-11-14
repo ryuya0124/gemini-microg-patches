@@ -1,6 +1,6 @@
 {
-  "version": "0.3.5-diagnostics.1",
-  "created_at": "2026-11-13T09:00:00",
+  "version": "0.3.5-diagnostics.2",
+  "created_at": "2026-11-14T00:00:00",
   "base_tag": "v0.3.5",
   "base_commit": "cf964a6f4c2239015b678e9ad1b5f0d6e53ec5b0",
   "profile": "17.72.17.ve.arm64.json"

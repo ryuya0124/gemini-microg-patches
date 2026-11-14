@@ -5,6 +5,9 @@ out="$BUILD_DIR/diagnostics"
 android_jar="${ANDROID_JAR:-$ANDROID_HOME/platforms/android-36/android.jar}"
 require_file "$android_jar"
 require_file "$ROOT/tools/r8.jar"
+mkdir -p "$out/tests"
+javac -encoding UTF-8 -d "$out/tests" "$ROOT/diagnostics/runtime/app/geminipatch/diagnostics/CaptureInbox.java" "$ROOT/diagnostics/tests/CaptureInboxTest.java"
+"$JAVA" -cp "$out/tests" app.geminipatch.diagnostics.CaptureInboxTest
 mkdir -p "$out/runtime/classes" "$out/runtime/dex" "$out/resources/extensions" "$out/resources/diagnostics" "$out/patch-dex"
 python3 "$ROOT/diagnostics/package.py" schema "$out"
 javac -encoding UTF-8 -source 8 -target 8 -bootclasspath "$android_jar" -d "$out/runtime/classes" \

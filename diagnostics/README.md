@@ -1,5 +1,7 @@
 # Diagnostic development notes — 2026-11-13
 
+**2026-11-14 / diagnostics2:** see [loss correction and further investigation](logging-v2-2026-11-14.md) for the reproduced diagnostics1 admission defect, fair bounded buffering, per-process stop acknowledgments, Manager inventory correction and the Web-origin/original-Gemini-absence comparison. Sections below describe the original diagnostics1 implementation and its historical test artifact; use the newer record for current behavior.
+
 This branch is isolated from the ongoing latest-version/provider investigation. Base: public `v0.3.5`, commit `cf964a6f4c2239015b678e9ad1b5f0d6e53ec5b0`. Its patch algorithms are retained; their compatibility metadata now lists the exact versions from the base hook registry. No provider candidate or new version profile is included.
 
 The reported conversation warning is **unreproduced**. This is an opt-in evidence collection build, not a fix. A stable release still requires cause, emulator reproduction and verified correction. See [capture instructions](../docs/diagnostics.md).

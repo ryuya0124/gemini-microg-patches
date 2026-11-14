@@ -16,7 +16,8 @@ public final class NativeCaptureProbe extends Instrumentation {
     private Class<?> capture, replyType;
     private Context target;
     private String stage="initialize";
-    @Override public void onCreate(Bundle args) { super.onCreate(args); start(); }
+    private boolean stress;
+    @Override public void onCreate(Bundle args) { super.onCreate(args); stress=args!=null&&"true".equals(args.getString("stress")); start(); }
     private static void require(boolean b) { if (!b) throw new AssertionError(); }
     private Object callback(final CountDownLatch latch, final boolean[] result) {
         return Proxy.newProxyInstance(replyType.getClassLoader(),new Class<?>[]{replyType},new InvocationHandler(){
@@ -58,7 +59,21 @@ public final class NativeCaptureProbe extends Instrumentation {
             String canary="PRIVATE_CANARY user@example.invalid https://private.invalid/chat/SECRET_CONVERSATION_ID";
             Class<?> metadataProto=l.loadClass("gfnf");
             Object metadata=parse.invoke(null,metadataProto.getField("a").get(null),concat(text(1,canary),text(2,canary)));
-            capture.getMethod("incoming",Object.class).invoke(null,metadata);
+            final CountDownLatch entered=new CountDownLatch(1), release=new CountDownLatch(1);
+            if(stress){
+                Field queue=capture.getDeclaredField("TASKS");queue.setAccessible(true);
+                @SuppressWarnings("unchecked") java.util.concurrent.BlockingDeque<Runnable> tasks=(java.util.concurrent.BlockingDeque<Runnable>)queue.get(null);
+                tasks.offerLast(new Runnable(){public void run(){entered.countDown();try{release.await(15,TimeUnit.SECONDS);}catch(InterruptedException ignored){}}});
+                require(entered.await(5,TimeUnit.SECONDS));
+            }
+            try {
+                for(int i=0;i<(stress?5000:1);i++)capture.getMethod("incoming",Object.class).invoke(null,metadata);
+                if(stress){
+                    Class<?> turn=l.loadClass("gfnl");Object value=parse.invoke(null,turn.getField("a").get(null),text(8,canary));
+                    capture.getMethod("incoming",Object.class).invoke(null,value);
+                    Class<?> frame=l.loadClass("gigv");capture.getMethod("stream",Object.class).invoke(null,frame.getField("a").get(null));
+                    capture.getMethod("requestVersion",String.class).invoke(null,"17.72.17.ve.arm64");
+                }
             Class<?> caps=l.loadClass("gfcc");capture.getMethod("capabilities",Object.class).invoke(null,caps.getField("a").get(null));
             capture.getMethod("version",String.class).invoke(null,"17.72.17.ve.arm64");
             stage="native_status_parser";
@@ -75,6 +90,21 @@ public final class NativeCaptureProbe extends Instrumentation {
             Object detail=parser.getMethod("a",Throwable.class).invoke(null,error);
             require(detail!=null&&detail.getClass().getField("c").getInt(detail)==1086);
             require("UNSUPPORTED_CLIENT_TOO_OLD".equals(l.loadClass("atuf").getMethod("b",Throwable.class).invoke(null,error)));
+            } finally { release.countDown(); }
+            if(stress){
+                stage="native_text_setter";
+                final Method setter=l.loadClass("tm").getMethod("o",android.widget.TextView.class,CharSequence.class);
+                setter.setAccessible(true);
+                final String warningText="Conversation requires an update. "+canary;
+                final boolean[] unchanged={false};
+                final String[] rendererError={null};
+                runOnMainSync(new Runnable(){public void run(){try{
+                    android.widget.TextView view=new android.widget.TextView(target);setter.invoke(null,view,warningText);
+                    unchanged[0]=warningText.contentEquals(view.getText());
+                }catch(Exception e){rendererError[0]=e.getClass().getSimpleName();}}});
+                if(rendererError[0]!=null)result.putString("rendererErrorType",rendererError[0]);
+                require(unchanged[0]);result.putBoolean("nativeTextSetterResultPreserved",true);
+            }
             // Stop must drain earlier observations; it must not overtake the error event.
             stage="stop_and_export";action("stop",null,false);action("save",exported,false);
             String serialized=read(exported);require(serialized.length()<1024*1024);
@@ -83,7 +113,7 @@ public final class NativeCaptureProbe extends Instrumentation {
             JSONObject report=new JSONObject(serialized);require(report.getBoolean("syntheticTest"));
             result.putBoolean("canaryTextAndIdentifiersExcluded",true);
             stage="validate_events";
-            JSONArray events=report.getJSONArray("events");boolean wire=false,meta=false,cap=false,stopped=false,header=false,available=true;
+            JSONArray events=report.getJSONArray("events");boolean wire=false,meta=false,cap=false,stopped=false,header=false,available=true,turn=false,stream=false,request=false,setter=false;
             java.util.TreeSet<String> kinds=new java.util.TreeSet<String>(),missing=new java.util.TreeSet<String>();
             for(int i=0;i<events.length();i++){
                 JSONObject e=events.getJSONObject(i);require(e.getBoolean("syntheticTest"));String kind=e.getString("event");
@@ -91,6 +121,10 @@ public final class NativeCaptureProbe extends Instrumentation {
                 if(kind.equals("observer_unavailable")){available=false;missing.add(e.optString("stage"));}
                 if(kind.equals("server_status"))wire|=e.getInt("wireCode")==1086&&e.getString("error").equals("UNSUPPORTED_CLIENT_TOO_OLD")&&e.getBoolean("knownWarningText");
                 if(kind.equals("parsed_message"))meta|=e.getString("schema").equals("parsed_conversation_metadata")&&e.getBoolean("textScanPerformed");
+                if(kind.equals("parsed_message"))turn|=e.getString("schema").equals("parsed_conversation_turn")&&e.getBoolean("textScanPerformed");
+                if(kind.equals("incoming_stream"))stream=true;
+                if(kind.equals("request_client_version"))request=true;
+                if(kind.equals("known_warning_setter"))setter|=e.getJSONArray("callers").toString().contains("tm#o");
                 if(kind.equals("capabilities"))cap=true;
                 if(kind.equals("capture_stopped"))stopped=true;
                 if(kind.equals("capture_started")) {
@@ -101,6 +135,15 @@ public final class NativeCaptureProbe extends Instrumentation {
             }
             result.putString("observedEventKinds",kinds.toString());result.putString("unavailableStages",missing.toString());
             result.putBoolean("wireStatusObserved",wire);result.putBoolean("metadataObserved",meta);result.putBoolean("capabilitiesObserved",cap);result.putBoolean("stopObserved",stopped);result.putBoolean("headerObserved",header);
+            if(stress){
+                result.putBoolean("burstTurnObserved",turn);result.putBoolean("burstStreamObserved",stream);result.putBoolean("burstRequestVersionObserved",request);
+                stage="validate_burst_retention";require(turn&&stream&&request&&cap&&wire);
+                require(report.getBoolean("allStoppedProcessesAcknowledged")&&!report.getBoolean("incomplete")&&report.getLong("minimumObservedLoss")==0);
+                JSONArray processes=report.getJSONArray("processes");boolean merged=false;
+                for(int i=0;i<processes.length();i++)merged|=processes.getJSONObject(i).getJSONObject("admission").optLong("merged:incoming:parsed_conversation_metadata")>4000;
+                require(merged);result.putBoolean("historyBurst5000AllOtherKindsRetained",true);result.putBoolean("processLossSummaryVerified",true);
+                require(setter);result.putBoolean("nativeWarningSetterCallsiteCaptured",true);
+            }
             require(available);
             require(wire&&meta&&cap&&stopped&&header);
             result.putBoolean("nativeWire1086Captured",true);result.putBoolean("incomingMetadataScanned",true);
