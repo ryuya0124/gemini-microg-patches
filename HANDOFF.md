@@ -230,3 +230,11 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - default回帰API31/API36各26、MPP設定11も成功。追加のUniversalVersionProbeとVerifyUpdateCompatibilityで実APKと分岐/レジスタを検査。MPPは27パッチクラスをDEX収録。検証MPP SHA256 c8fde8dad57baba664fd8a8f948125fdeca77165b20a0cba37ad73b9ba771778。
 - 詳細/コマンド/範囲/ハッシュはdocs/testing/issue-8-play-store.md。生UI XMLやAVDにはログイン情報があるためlocal/のまま公開しない。StoreログインとmicroG側のチャット認証は別で、今回は後者を確認したとは扱わない。
 - リリース本文は変更/修正2点のみ。CI/配布物照合後に公開・短い返信を行う。署名キーは既存を維持し、公開APK/キー/生ログを添付しない。
+
+## Issue #8: diagnostics3 and reporter2 (2026-11-14)
+
+- Reporter comment6872288929 supplied diagnostics2. All4 processes acknowledged stop, minimumObservedLoss=0; metadata coalescing remains intentional. Native setter/view evidence identifies PuntDisclaimer (bhej/biyy), not a quotation in assistant text. Full analysis: diagnostics/reporter-log2-2026-11-14.md.
+- Source tracing found top-level gffq.d history warning -> aozi.z -> aofx.k -> bdci.e -> bdbo.w -> bckt -> bhej. gfeh.p/q and gfnl.k are distinct thread/turn sources. These findings establish the renderer/data path, not the cause or a fresh server rejection. Do not suppress punts or invent capabilities.
+- Diagnostics3 directly records warning submessage presence/behavior/known-warning flags and static locations; full history/generate envelopes are not serialized. Exact owning profile and register/site assertions retained. Synthetic native protobuf/5000-burst/privacy tests, authenticated Web-origin continuation/document-picker export (4 ACK/loss0), actual Android Manager default12 generation/install/export (3 ACK/loss0) and exact ordinary app restoration passed. Both dedicated AVDs stopped with data retained; Galaxy untouched.
+- Tested MPP233997 bytes SHA256 e4521891ea77059a1373e74decc4f04b96e0850bc1fbcfc007146ecf1dc97030. Diagnostic release only; stable v0.3.5/feed unchanged. Cause and natural reproduction/correction remain unverified, so no stable warning fix may be published.
+- LATEST USER INSTRUCTION: Every Issue reply requires the user's review BEFORE posting. Interim receipt/status comment6874790622 was explicitly deleted at the user's request; absence verified. Do not post an acknowledgment, capture request or status without review. A new capture request can be prepared for review, not sent automatically.

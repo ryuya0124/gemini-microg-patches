@@ -296,8 +296,16 @@ public final class Capture {
     public static void incoming(final Object value) {
         if (!active || value == null || !Schema.ROOTS.containsKey(value.getClass().getName())) return;
         final String kind = Schema.ROOTS.get(value.getClass().getName());
+        final boolean response = kind.equals("parsed_history_response") || kind.equals("parsed_generate_response");
+        final ArrayList<String> callers = response || kind.equals("parsed_conversation_turn") ? fixedCallers() : null;
         observed("incoming:" + kind, new Runnable() { public void run() {
             try {
+                String prefix = value.getClass().getName() + ".";
+                for (Map.Entry<String,String> field : Schema.PUNT_FIELDS.entrySet()) if (field.getKey().startsWith(prefix))
+                    recordPunt(value.getClass().getField(field.getKey().substring(prefix.length())).get(value), field.getValue(), callers);
+                // Inspect only the warning submessage on large history/generate envelopes.
+                // Never serialize those envelopes or retain conversation IDs/turn contents.
+                if (response) return;
                 Class<?> lite = value.getClass().getClassLoader().loadClass("com.google.protobuf.MessageLite");
                 int size = ((Integer) lite.getMethod("getSerializedSize").invoke(value)).intValue();
                 boolean scanned = size >= 0 && size <= 1024 * 1024, hit = false;
@@ -309,7 +317,34 @@ public final class Capture {
                 if (hit || emit) append(event("parsed_message").put("schema", kind).put("observedCount", COUNTERS.get("parsed:" + kind))
                         .put("knownWarningText", hit).put("textScanPerformed", scanned), hit);
             } catch (Throwable ignored) { problem("parsed_message"); }
-        }}, kind.equals("parsed_conversation_turn"), !kind.equals("parsed_conversation_turn"));
+        }}, response || kind.equals("parsed_conversation_turn"), !response && !kind.equals("parsed_conversation_turn"));
+    }
+    public static void history(Object value) { incoming(value); }
+    public static void puntRendered(final Object value) {
+        if (!active) return;
+        final ArrayList<String> callers = fixedCallers();
+        observed("punt_rendered", new Runnable() { public void run() {
+            try { recordPunt(value, "banner", callers); } catch (Throwable ignored) { problem("punt_rendered"); }
+        }}, true, false);
+    }
+    private static void recordPunt(Object value, String source, ArrayList<String> callers) throws Exception {
+        if (value != null && !value.getClass().getName().equals(Schema.PUNT)) { problem("punt_type"); return; }
+        JSONObject data = event("conversation_punt").put("source", source).put("present", value != null).put("callers", new JSONArray(callers));
+        String key = "punt:" + source + ":" + callers.toString() + ":" + (value != null);
+        boolean titleHit = false, bodyHit = false;
+        if (value != null) {
+            String title = (String) value.getClass().getField(Schema.PUNT_TITLE).get(value);
+            String body = (String) value.getClass().getField(Schema.PUNT_BODY).get(value);
+            int rawBehavior = value.getClass().getField(Schema.PUNT_BEHAVIOR).getInt(value);
+            int behavior = rawBehavior >= 0 && rawBehavior <= 4 ? rawBehavior : -1;
+            boolean titlePresent = title != null && !title.isEmpty(), bodyPresent = body != null && !body.isEmpty();
+            titleHit = warning(title); bodyHit = warning(body);
+            data.put("behavior", behavior).put("titlePresent", titlePresent).put("bodyPresent", bodyPresent)
+                    .put("knownWarningTitle", titleHit).put("knownWarningBody", bodyHit);
+            key += ":" + behavior + ":" + titlePresent + ":" + bodyPresent + ":" + titleHit + ":" + bodyHit;
+        }
+        // Only safe flags and static locations participate in de-duplication.
+        if (SEEN.add(key)) append(data, titleHit || bodyHit || source.equals("banner"));
     }
     public static void stream(Object value) {
         if (!active) return;
@@ -382,19 +417,23 @@ public final class Capture {
     private static String codeName(String value) {
         return value != null && value.matches("[A-Za-z0-9_.$<>-]{1,180}") ? value : "unavailable";
     }
+    private static ArrayList<String> fixedCallers() {
+        ArrayList<String> callers = new ArrayList<String>();
+        for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
+            String cls = frame.getClassName();
+            if (cls.startsWith("java.") || cls.startsWith("android.") || cls.startsWith("dalvik.") ||
+                    cls.startsWith("kotlin.") || cls.startsWith("j$.") || cls.startsWith("app.geminipatch.")) continue;
+            callers.add(codeName(cls) + "#" + codeName(frame.getMethodName()));
+            if (callers.size() == 6) break;
+        }
+        return callers;
+    }
     /** Native setter call sites only. No text, filenames, line numbers or exception trace is saved. */
     public static void textSet(CharSequence value) {
         if (!active || value == null) return;
         try {
             if (value.length() > 4096 || !warning(value.toString())) return;
-            final ArrayList<String> callers = new ArrayList<String>();
-            for (StackTraceElement frame : Thread.currentThread().getStackTrace()) {
-                String cls = frame.getClassName();
-                if (cls.startsWith("java.") || cls.startsWith("android.") || cls.startsWith("dalvik.") ||
-                        cls.startsWith("kotlin.") || cls.startsWith("j$.") || cls.startsWith("app.geminipatch.")) continue;
-                callers.add(codeName(cls) + "#" + codeName(frame.getMethodName()));
-                if (callers.size() == 6) break;
-            }
+            final ArrayList<String> callers = fixedCallers();
             observed("warning_setter", new Runnable() { public void run() { try {
                 String key = "setter:" + callers.toString();
                 if (SEEN.add(key)) append(event("known_warning_setter").put("callers", new JSONArray(callers)), true);

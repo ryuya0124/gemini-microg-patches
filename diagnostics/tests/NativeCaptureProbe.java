@@ -69,6 +69,20 @@ public final class NativeCaptureProbe extends Instrumentation {
             try {
                 for(int i=0;i<(stress?5000:1);i++)capture.getMethod("incoming",Object.class).invoke(null,metadata);
                 if(stress){
+                    stage="native_punt_submessages";
+                    byte[] puntBytes=concat(text(1,"Conversation requires an update "+canary),text(2,"This conversation was created with a newer version of Gemini. "+canary),number(4,1));
+                    Class<?> punt=l.loadClass("ghto"),history=l.loadClass("gffq"),generate=l.loadClass("gfeh");
+                    Object nativePunt=parse.invoke(null,punt.getField("a").get(null),puntBytes);
+                    Object nativeHistory=parse.invoke(null,history.getField("a").get(null),bytes(3,puntBytes));
+                    Object nativeGenerate=parse.invoke(null,generate.getField("a").get(null),bytes(13,puntBytes));
+                    require(nativeHistory.getClass().getField("d").get(nativeHistory)!=null);
+                    require(nativeGenerate.getClass().getField("p").get(nativeGenerate)!=null);
+                    capture.getMethod("incoming",Object.class).invoke(null,nativeHistory);
+                    capture.getMethod("history",Object.class).invoke(null,nativeHistory);
+                    capture.getMethod("incoming",Object.class).invoke(null,nativeGenerate);
+                    capture.getMethod("puntRendered",Object.class).invoke(null,nativePunt);
+                    // A normal response must explicitly report an absent thread punt.
+                    capture.getMethod("incoming",Object.class).invoke(null,history.getField("a").get(null));
                     Class<?> turn=l.loadClass("gfnl");Object value=parse.invoke(null,turn.getField("a").get(null),text(8,canary));
                     capture.getMethod("incoming",Object.class).invoke(null,value);
                     Class<?> frame=l.loadClass("gigv");capture.getMethod("stream",Object.class).invoke(null,frame.getField("a").get(null));
@@ -113,7 +127,7 @@ public final class NativeCaptureProbe extends Instrumentation {
             JSONObject report=new JSONObject(serialized);require(report.getBoolean("syntheticTest"));
             result.putBoolean("canaryTextAndIdentifiersExcluded",true);
             stage="validate_events";
-            JSONArray events=report.getJSONArray("events");boolean wire=false,meta=false,cap=false,stopped=false,header=false,available=true,turn=false,stream=false,request=false,setter=false;
+            JSONArray events=report.getJSONArray("events");boolean wire=false,meta=false,cap=false,stopped=false,header=false,available=true,turn=false,stream=false,request=false,setter=false,historyPunt=false,streamPunt=false,bannerPunt=false,absentPunt=false;
             java.util.TreeSet<String> kinds=new java.util.TreeSet<String>(),missing=new java.util.TreeSet<String>();
             for(int i=0;i<events.length();i++){
                 JSONObject e=events.getJSONObject(i);require(e.getBoolean("syntheticTest"));String kind=e.getString("event");
@@ -125,6 +139,13 @@ public final class NativeCaptureProbe extends Instrumentation {
                 if(kind.equals("incoming_stream"))stream=true;
                 if(kind.equals("request_client_version"))request=true;
                 if(kind.equals("known_warning_setter"))setter|=e.getJSONArray("callers").toString().contains("tm#o");
+                if(kind.equals("conversation_punt")){
+                    String source=e.getString("source");boolean hit=e.optBoolean("knownWarningTitle")&&e.optBoolean("knownWarningBody")&&e.optInt("behavior")==1;
+                    historyPunt|=source.equals("history_response")&&hit;
+                    streamPunt|=source.equals("stream_thread")&&hit;
+                    bannerPunt|=source.equals("banner")&&hit;
+                    absentPunt|=source.equals("history_response")&&!e.getBoolean("present");
+                }
                 if(kind.equals("capabilities"))cap=true;
                 if(kind.equals("capture_stopped"))stopped=true;
                 if(kind.equals("capture_started")) {
@@ -143,6 +164,8 @@ public final class NativeCaptureProbe extends Instrumentation {
                 for(int i=0;i<processes.length();i++)merged|=processes.getJSONObject(i).getJSONObject("admission").optLong("merged:incoming:parsed_conversation_metadata")>4000;
                 require(merged);result.putBoolean("historyBurst5000AllOtherKindsRetained",true);result.putBoolean("processLossSummaryVerified",true);
                 require(setter);result.putBoolean("nativeWarningSetterCallsiteCaptured",true);
+                stage="validate_punt_submessages";require(historyPunt&&streamPunt&&bannerPunt&&absentPunt);
+                result.putBoolean("nativePuntSubmessagesCapturedWithoutText",true);
             }
             require(available);
             require(wire&&meta&&cap&&stopped&&header);

@@ -2,13 +2,25 @@
   "packageName": "com.google.android.googlequicksearchbox",
   "versionName": "17.72.17.ve.arm64",
   "versionCode": "301831138",
-  "build": "0.3.5-diagnostics.2",
+  "build": "0.3.5-diagnostics.3",
+  "puntType": "ghto",
+  "puntTitleField": "b",
+  "puntBodyField": "c",
+  "puntBehaviorField": "f",
+  "puntFields": {
+    "gffq.d": "history_response",
+    "gfeh.p": "stream_thread",
+    "gfeh.q": "stream_turn",
+    "gfnl.k": "history_turn"
+  },
   "activity": "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/main/MainActivity;",
   "application": "com.google.android.apps.gsa.binaries.velvet.app.VelvetMultiprocessRoot_Application",
   "statusType": "ggmf",
   "errorEnum": "geec",
   "capabilitiesType": "gfcc",
   "incomingTypes": {
+    "gffq": "parsed_history_response",
+    "gfeh": "parsed_generate_response",
     "gfnf": "parsed_conversation_metadata",
     "gfnl": "parsed_conversation_turn",
     "gigv": "parsed_stream_frame",
@@ -21,7 +33,9 @@
     "stream": "Laomg;->b(Lgigv;Lhiiq;)Ljava/lang/Object;",
     "status": "Latuc;->a(Ljava/lang/Throwable;)Lggmf;",
     "classified": "Latuf;->b(Ljava/lang/Throwable;)Ljava/lang/String;",
-    "readOnly": "Lbean;->ah(Lbdya;)V"
+    "readOnly": "Lbean;->ah(Lbdya;)V",
+    "history": "Laojo;->n(Lgffq;ZZZLhiiq;)Ljava/lang/Object;",
+    "banner": "Lbhej;->b(Ljava/lang/Object;I)V"
   },
   "versionFields": {
     "Lggjj;->c:Ljava/lang/String;": "version",
@@ -38,7 +52,9 @@
     "capabilities": 2,
     "version": 1,
     "requestVersion": 5,
-    "textSet": 1685
+    "textSet": 1685,
+    "history": 1,
+    "puntRendered": 1
   },
   "analysis": [
     "API30 original and Store original have identical fourteen DEX files; source version/code remain guarded.",

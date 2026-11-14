@@ -106,8 +106,11 @@ val conversationDiagnosticsPatch = bytecodePatch(
                 if (id(m) == methods["init"]) observe(0, "p0", "init", "Landroid/content/Context;")
                 if (id(m) == methods["stream"]) observe(0, "p1", "stream")
                 if (id(m) == methods["readOnly"]) observe(0, "p1", "readOnly")
+                if (id(m) == methods["history"]) observe(0, "p1", "history")
                 for ((i, ins) in m.instructions.toList().withIndex()) {
                     val reference = (ins as? ReferenceInstruction)?.reference.toString()
+                    if (id(m) == methods["banner"] && ins.opcode == Opcode.IGET_OBJECT && reference == "Lbckt;->a:L${value("puntType")};")
+                        observe(i + 1, "v${(ins as TwoRegisterInstruction).registerA}", "puntRendered")
                     if (textSetter(ins)) {
                         val textRegister = if (ins is RegisterRangeInstruction) ins.startRegister + 1 else (ins as FiveRegisterInstruction).registerD
                         observe(i + 1, "v$textRegister", "textSet", "Ljava/lang/CharSequence;")

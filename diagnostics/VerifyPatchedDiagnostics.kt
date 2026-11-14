@@ -36,6 +36,17 @@ fun main(args:Array<String>) {
             println("All ${returns.size} $owner.$name return paths retain the observer")
         }
         check(classes.none{it.type.contains("ReducedCaps")||it.type.contains("Issue8Trace;")})
+        val history=classes.single{it.type=="Laojo;"}.methods.single{it.name=="n"&&it.parameterTypes.firstOrNull()=="Lgffq;"}
+        val entry=history.implementation!!.instructions.first()
+        check(entry.opcode==Opcode.INVOKE_STATIC_RANGE&&(entry as ReferenceInstruction).reference.toString()=="Lapp/geminipatch/diagnostics/Capture;->history(Ljava/lang/Object;)V")
+        check((entry as RegisterRangeInstruction).startRegister==history.implementation!!.registerCount-5)
+        val banner=classes.single{it.type=="Lbhej;"}.methods.single{it.name=="b"}.implementation!!.instructions.toList()
+        val puntIndex=banner.indexOfFirst{it.opcode==Opcode.IGET_OBJECT&&(it as ReferenceInstruction).reference.toString()=="Lbckt;->a:Lghto;"}
+        check(puntIndex>=0)
+        val observer=banner[puntIndex+1]
+        check(observer.opcode==Opcode.INVOKE_STATIC_RANGE&&(observer as ReferenceInstruction).reference.toString()=="Lapp/geminipatch/diagnostics/Capture;->puntRendered(Ljava/lang/Object;)V")
+        check((observer as RegisterRangeInstruction).startRegister==(banner[puntIndex] as TwoRegisterInstruction).registerA)
+        println("History response entry and native punt renderer retain the correct object registers")
         var setterCount=0
         for(c in classes.filterNot{it.type.startsWith("Lapp/geminipatch/diagnostics/")})for(m in c.methods){
             val instructions=m.implementation?.instructions?.toList()?:continue
