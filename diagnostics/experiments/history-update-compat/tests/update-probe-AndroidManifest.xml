@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.geminipatch.updatecompattest">
+ <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36" />
+ <application android:label="Private update compatibility emulator test" />
+ <instrumentation android:name="app.geminipatch.updatecompattest.UpdateCompatibilityProbe" android:targetPackage="com.google.android.googlequicksearchbox.morphe" />
+</manifest>

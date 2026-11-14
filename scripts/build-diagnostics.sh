@@ -11,7 +11,7 @@ javac -encoding UTF-8 -d "$out/tests" "$ROOT/diagnostics/runtime/app/geminipatch
 mkdir -p "$out/runtime/classes" "$out/runtime/dex" "$out/resources/extensions" "$out/resources/diagnostics" "$out/patch-dex"
 python3 "$ROOT/diagnostics/package.py" schema "$out"
 javac -encoding UTF-8 -source 8 -target 8 -bootclasspath "$android_jar" -d "$out/runtime/classes" \
-  "$ROOT/diagnostics/runtime/app/geminipatch/diagnostics/"*.java "$out/runtime/Schema.java"
+  "$ROOT/diagnostics/runtime/app/geminipatch/diagnostics/"*.java "$ROOT/diagnostics/runtime/app/geminipatch/compat/"*.java "$out/runtime/Schema.java"
 jar cf "$out/runtime/runtime.jar" -C "$out/runtime/classes" .
 "$JAVA" -cp "$ROOT/tools/r8.jar" com.android.tools.r8.D8 --release --min-api 26 --lib "$android_jar" \
   --output "$out/runtime/dex" "$out/runtime/runtime.jar"
@@ -28,4 +28,4 @@ bundle="$out/release/gemini-microg-patches-$version.mpp"
 "$JAVA" -cp "$out/verify.jar:$MORPHE" VerifyMppKt "$bundle" "$version"
 "$JAVA" -cp "$out/verify.jar:$MORPHE:$out/diagnostics-patches.jar" VerifyDiagnosticsKt "$bundle"
 "$JAVA" -jar "$MORPHE" list-patches --patches "$bundle" --out "$out/patch-list.txt"
-printf 'Diagnostic-only bundle: %s\n' "$bundle"
+printf 'Experimental bundle: %s\n' "$bundle"

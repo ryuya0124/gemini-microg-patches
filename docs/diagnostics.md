@@ -1,13 +1,13 @@
 # Conversation update warning: diagnostic build
 
-This optional build helps investigate [Issue #8](https://github.com/ryuya0124/gemini-microg-patches/issues/8). It does not fix the conversation warning. The normal stable source remains unchanged.
+This experimental preview includes a targeted compatibility change and optional diagnostics for [Issue #8](https://github.com/ryuya0124/gemini-microg-patches/issues/8). See the [preview instructions](history-update-preview.md). The affected reporter conversation is not yet verified with the change. The normal stable source remains unchanged.
 
 ## Install without losing the affected conversation
 
 The diagnostic patch supports **Google `17.72.17.ve.arm64` (301831138) only**. Keep your existing original APK versions, Gemini installation, Morphe signing key and update-blocking settings. Do not switch app versions for this capture.
 
-1. Download the `.mpp` from [the diagnostic prerelease](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.5-diagnostics.3).
-2. In Morphe Manager, open Sources → Add → Select patch source files and import it locally. The source version should read `0.3.5-diagnostics.3`.
+1. Download the `.mpp` from [the diagnostic prerelease](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.6-preview.1).
+2. In Morphe Manager, open Sources → Add → Select patch source files and import it locally. The source version should read `0.3.6-preview.1`.
 3. Select the **original, unpatched** Google APK above. Keep this source's default selection, including **Conversation diagnostics**, and your existing optional update-blocking selection. Gemini does not need repatching for this capture.
 4. Install as an update using the same Morphe signing key. **If Android rejects the update, stop. Do not uninstall, clear data, reset microG or replace the signing key.** Those actions can lose the state needed to investigate the warning.
 
