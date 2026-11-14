@@ -349,17 +349,27 @@ public final class Capture {
     /** Fixed compatibility outcomes only; never retains a response, text or exception. */
     public static void historyUpdateCompatibility(final int call, final int result, final int stage, final int behavior,
             final boolean present, final boolean compared, final boolean title, final boolean body) {
-        if (!active || call <= 0 || result < 0 || result > 4 || stage < 1 || stage > 6) return;
-        observed("history_update_compatibility", new Runnable() { public void run() { try {
+        updateCompatibility(0, call, result, stage, behavior, present, compared, title, body);
+    }
+    public static void updateCompatibility(final int source, final int call, final int result, final int stage, final int behavior,
+            final boolean present, final boolean compared, final boolean title, final boolean body) {
+        if (!active || source < 0 || source > 3 || call <= 0 || result < 0 || result > 4 || stage < 1 || stage > 6) return;
+        final String kind = source == 0 ? "history_update_compatibility" : "stream_update_compatibility";
+        observed(kind, new Runnable() { public void run() { try {
             String[] outcomes = {"no_punt", "retained", "matched", "removed", "failed"};
             String[] stages = {"schema", "match", "copy", "clear", "validate", "complete"};
-            String key = "compatibility:" + outcomes[result];
+            String[] sources = {"history_response", "stream_thread", "stream_turn", "stream_response"};
+            String key = "compatibility:" + sources[source] + ":" + outcomes[result];
             COUNTERS.put(key, COUNTERS.containsKey(key) ? COUNTERS.get(key) + 1 : 1);
-            append(event("history_update_compatibility").put("call", call).put("result", outcomes[result])
+            int count = COUNTERS.get(key);
+            // Empty streaming frames can be numerous: count all, emit first4/every128.
+            // Every present/matched/removed/failed warning remains unmerged and unsampled.
+            if (source == 3 && result == 0 && count > 4 && count % 128 != 0) return;
+            append(event(kind).put("source", sources[source]).put("observedCount", count).put("call", call).put("result", outcomes[result])
                     .put("stage", stages[stage - 1]).put("behavior", behavior >= 0 && behavior <= 4 ? behavior : -1)
                     .put("originalPuntPresent", present).put("filteredPuntPresent", result != 3 && present)
                     .put("textCompared", compared).put("knownWarningTitle", title).put("knownWarningBody", body), true);
-        } catch (Throwable ignored) { problem("history_update_compatibility"); } }}, true, false);
+        } catch (Throwable ignored) { problem("update_compatibility"); } }}, true, false);
     }
     public static void stream(Object value) {
         if (!active) return;

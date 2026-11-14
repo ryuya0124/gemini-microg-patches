@@ -46,7 +46,32 @@ public final class UpdateCompatibilityProbe extends Instrumentation {
   require(filter.invoke(null,"unrelated object").equals("unrelated object"));
   result.putBoolean("otherPuntsBehaviorsAndQuotedTextUnchanged",true);result.putBoolean("nativeProtobufSelectiveRemovalPassed",true);
  }
- private void export(int mode,Bundle result)throws Exception{
+ private void streamUnit(Bundle result)throws Exception{
+  Method filter=loader.loadClass("app.geminipatch.compat.HistoryUpdateCompatibility").getMethod("filterStream",Object.class);
+  String canary="PRIVATE_CANARY user@example.invalid https://private.invalid/SECRET_CONVERSATION_ID";
+  byte[] rest=concat(bytes(1,new byte[0]),text(25,canary),number(99,7));
+  byte[] punt=concat(text(1,"Conversation requires an update"),text(2,"This conversation was created with a newer version of Gemini. "+canary),number(4,1));
+  byte[] other=concat(text(1,"Temporarily unavailable"),text(2,canary),number(4,1));
+  for(int field:new int[]{13,17}){
+   Object original=parse("gfeh",concat(rest,bytes(field,punt))),expected=parse("gfeh",rest);byte[] before=wire(original);
+   int bit=field==13?512:1024;String name=field==13?"p":"q";
+   require((original.getClass().getField("b").getInt(original)&bit)!=0);
+   Object fixed=filter.invoke(null,original);require(fixed!=original&&Arrays.equals(wire(fixed),wire(expected))&&Arrays.equals(wire(original),before));
+   require(fixed.getClass().getField(name).get(fixed)==null&&(fixed.getClass().getField("b").getInt(fixed)&bit)==0);
+   // The actual patched app constructor must receive the same corrected response.
+   Object wrapper=loader.loadClass("aopx").getConstructor(original.getClass()).newInstance(original);
+   require(Arrays.equals(wire(wrapper.getClass().getField("a").get(wrapper)),wire(expected)));
+   for(int behavior:new int[]{0,2,3,4,99}){Object value=parse("gfeh",concat(rest,bytes(field,concat(text(1,"Conversation requires an update"),text(2,"This conversation was created with a newer version of Gemini."),number(4,behavior)))));require(filter.invoke(null,value)==value);}
+  }
+  Object both=parse("gfeh",concat(rest,bytes(13,punt),bytes(17,punt)));byte[] before=wire(both);
+  require(Arrays.equals(wire(filter.invoke(null,both)),wire(parse("gfeh",rest)))&&Arrays.equals(wire(both),before));
+  Object mixed=parse("gfeh",concat(rest,bytes(13,other),bytes(17,punt)));
+  require(Arrays.equals(wire(filter.invoke(null,mixed)),wire(parse("gfeh",concat(rest,bytes(13,other))))));
+  Object none=parse("gfeh",rest);require(filter.invoke(null,none)==none);
+  result.putBoolean("streamThreadAndTurnWarningsSelectivelyRemoved",true);result.putBoolean("actualStreamConstructorHookPassed",true);
+  result.putBoolean("streamOriginalOtherWarningsAndUnknownFieldsPreserved",true);
+ }
+ private void export(int mode,boolean stream,Bundle result)throws Exception{
   action("stop",null);File f=target.getFileStreamPath("geminipatch-update-fixture-export.json");action("save",f);
   ByteArrayOutputStream out=new ByteArrayOutputStream();try(InputStream in=new FileInputStream(f)){byte[] b=new byte[4096];int n;while((n=in.read(b))>=0)out.write(b,0,n);}
   String raw=new String(out.toByteArray(),StandardCharsets.UTF_8);JSONObject j=new JSONObject(raw);
@@ -54,9 +79,10 @@ public final class UpdateCompatibilityProbe extends Instrumentation {
   boolean before=false,after=false,banner=false,setter=false;JSONArray events=j.getJSONArray("events");Map<String,Integer> counts=new TreeMap<String,Integer>();
   for(int i=0;i<events.length();i++){JSONObject e=events.getJSONObject(i);require(e.getBoolean("syntheticTest"));String name=e.getString("event");counts.put(name,counts.containsKey(name)?counts.get(name)+1:1);
    require(!name.equals("observer_unavailable"));
-   if(name.equals("conversation_punt")){String source=e.getString("source");boolean hit=e.optBoolean("knownWarningTitle")&&e.optBoolean("knownWarningBody");before|=source.equals("history_response")&&hit;after|=source.equals("history_response")&&!e.getBoolean("present");banner|=source.equals("banner")&&hit;}
+   if(name.equals("conversation_punt")){String source=e.getString("source");boolean hit=e.optBoolean("knownWarningTitle")&&e.optBoolean("knownWarningBody");before|=source.equals(stream?"stream_thread":"history_response")&&hit;after|=source.equals(stream?"stream_thread":"history_response")&&!e.getBoolean("present");banner|=source.equals("banner")&&hit;}
    setter|=name.equals("known_warning_setter");
   }
+  result.putBoolean("originalWarningObserved",before);result.putBoolean("filteredResponseObserved",after);result.putBoolean("nativeBannerObserved",banner);result.putString("eventCounts",new JSONObject(counts).toString());
   require(before&&j.getLong("minimumObservedLoss")==0);
   if(mode==1)require(banner&&setter);else if(mode==2)require(after&&!banner&&!setter);else throw new AssertionError();
   JSONObject summary=new JSONObject();summary.put("mode",mode).put("syntheticTest",true).put("originalWarningObserved",before).put("filteredHistoryObserved",after).put("nativeWarningBanner",banner).put("nativeWarningSetter",setter).put("canaryExcluded",true).put("minimumObservedLoss",j.getLong("minimumObservedLoss")).put("allStoppedProcessesAcknowledged",j.getBoolean("allStoppedProcessesAcknowledged")).put("incomplete",j.getBoolean("incomplete")).put("events",new JSONObject(counts));
@@ -67,7 +93,7 @@ public final class UpdateCompatibilityProbe extends Instrumentation {
   String command=args.getString("command","unit");int mode=Integer.parseInt(args.getString("mode","0"));stage=command;
   if(command.equals("unit"))unit(result);
   else if(command.equals("audit")){
-   action("start",null);unit(result);
+   action("start",null);unit(result);streamUnit(result);
    // Exercise the safe failure event independently; do not alter native protobuf state.
    capture.getMethod("historyUpdateCompatibility",int.class,int.class,int.class,int.class,boolean.class,boolean.class,boolean.class,boolean.class)
     .invoke(null,1000000,4,5,99,true,true,true,true);
@@ -76,21 +102,27 @@ public final class UpdateCompatibilityProbe extends Instrumentation {
    String raw=new String(out.toByteArray(),StandardCharsets.UTF_8);
    require(!raw.contains("PRIVATE_CANARY")&&!raw.contains("SECRET_CONVERSATION_ID")&&!raw.contains("user@example.invalid")&&!raw.contains("https://"));
    JSONObject report=new JSONObject(raw);require(report.getBoolean("syntheticTest")&&report.getLong("minimumObservedLoss")==0);
-   JSONArray events=report.getJSONArray("events");Set<String> outcomes=new HashSet<String>();int matched=0,removed=0,matchedCall=-1;
+   JSONArray events=report.getJSONArray("events");Set<String> outcomes=new HashSet<String>();int matched=0,removed=0;Set<Integer> matchedCalls=new HashSet<Integer>(),removedCalls=new HashSet<Integer>();boolean streamSeen=false;
    for(int i=0;i<events.length();i++){JSONObject e=events.getJSONObject(i);require(!e.getString("event").equals("observer_unavailable"));
-    if(!e.getString("event").equals("history_update_compatibility"))continue;
+    if(!e.getString("event").equals("history_update_compatibility")&&!e.getString("event").equals("stream_update_compatibility"))continue;
+    streamSeen|=e.getString("event").equals("stream_update_compatibility");
     String outcome=e.getString("result");outcomes.add(outcome);
-    if(outcome.equals("matched")){matched++;matchedCall=e.getInt("call");require(e.getBoolean("originalPuntPresent")&&e.getBoolean("filteredPuntPresent"));}
-    if(outcome.equals("removed")){removed++;require(e.getInt("call")==matchedCall&&e.getBoolean("originalPuntPresent")&&!e.getBoolean("filteredPuntPresent"));}
+    if(outcome.equals("matched")){matched++;matchedCalls.add(e.getInt("call"));require(e.getBoolean("originalPuntPresent")&&e.getBoolean("filteredPuntPresent"));}
+    if(outcome.equals("removed")){removed++;removedCalls.add(e.getInt("call"));require(matchedCalls.contains(e.getInt("call"))&&e.getBoolean("originalPuntPresent")&&!e.getBoolean("filteredPuntPresent"));}
     if(outcome.equals("failed"))require(e.getString("stage").equals("validate")&&e.getInt("behavior")==-1);
    }
-   require(matched==1&&removed==1&&outcomes.containsAll(Arrays.asList("no_punt","retained","matched","removed","failed")));
+   require(streamSeen&&matched>=8&&matched==removed&&matchedCalls.equals(removedCalls)&&outcomes.containsAll(Arrays.asList("no_punt","retained","matched","removed","failed")));
    result.putBoolean("compatibilityOutcomesAndFailureStageCaptured",true);result.putBoolean("auditCanaryExcluded",true);
    action("delete",null);require(f.delete());
   }
   else if(command.equals("start")){require(mode==1||mode==2);try(OutputStream out=new FileOutputStream(target.getFileStreamPath("geminipatch-update-fixture-mode"))){out.write(mode);}action("start",null);result.putInt("syntheticMode",mode);}
-  else if(command.equals("export"))export(mode,result);
-  else if(command.equals("cleanup")){action("stop",null);action("delete",null);File control=target.getFileStreamPath("geminipatch-update-fixture-mode");require(!control.exists()||control.delete());File exported=target.getFileStreamPath("geminipatch-update-fixture-export.json");require(!exported.exists()||exported.delete());result.putBoolean("fixtureAndCaptureRemoved",true);}
+  else if(command.equals("startstream")||command.equals("armstream")){
+   require(mode==1||mode==2);Field context=capture.getDeclaredField("context");context.setAccessible(true);Context owner=(Context)context.get(null);
+   require(owner.getFilesDir().equals(target.getFilesDir()));try(OutputStream out=new FileOutputStream(owner.getFileStreamPath("geminipatch-stream-fixture-mode"))){out.write(mode);}
+   if(command.equals("startstream"))action("start",null);result.putInt("syntheticStreamMode",mode);
+  }
+  else if(command.equals("export")||command.equals("exportstream"))export(mode,command.equals("exportstream"),result);
+  else if(command.equals("cleanup")){action("stop",null);action("delete",null);for(String name:new String[]{"geminipatch-stream-fixture-mode","geminipatch-update-fixture-mode","geminipatch-update-fixture-export.json"}){File f=target.getFileStreamPath(name);require(!f.exists()||f.delete());}result.putBoolean("fixtureAndCaptureRemoved",true);}
   else throw new AssertionError();result.putString("result","PASS");
  }catch(Throwable error){result.putString("result","FAIL");result.putString("stage",stage);result.putString("errorType",error.getClass().getSimpleName());if(error.getCause()!=null)result.putString("causeType",error.getCause().getClass().getSimpleName());}finish("PASS".equals(result.getString("result"))?Activity.RESULT_OK:Activity.RESULT_CANCELED,result);}
 }

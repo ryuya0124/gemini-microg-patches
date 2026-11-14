@@ -32,6 +32,21 @@ val historyUpdateCompatibilityPatch=bytecodePatch(
    check(target.implementation!!.registerCount==count);sites++
   }
   check(sites==1){"History response profile changed: $sites sites"}
+  val stream=checkNotNull(profile.getProperty("streamUpdateReceiveMethod"))
+  var streamSites=0
+  classDefForEach{owner->
+   if(owner.type!=stream.substringBefore("->"))return@classDefForEach
+   val original=owner.methods.single{id(it)==stream}
+   val registers=checkNotNull(original.implementation).registerCount
+   val target=mutableClassDefBy(owner).methods.single{id(it)==stream}
+   target.addInstructions(0,"""
+    invoke-static/range {p1 .. p1}, Lapp/geminipatch/compat/HistoryUpdateCompatibility;->filterStream(Ljava/lang/Object;)Ljava/lang/Object;
+    move-result-object p1
+    check-cast p1, Lgfeh;
+   """.trimIndent())
+   check(target.implementation!!.registerCount==registers);streamSites++
+  }
+  check(streamSites==1){"Stream response profile changed: $streamSites sites"}
   println("[HistoryUpdateCompatibility] Exact-profile receive hook applied; original registers retained")
  }
 }

@@ -34,7 +34,7 @@ fun main(args:Array<String>) {
         val types=jar.getInputStream(payload).buffered().use{DexBackedDexFile.fromInputStream(Opcodes.getDefault(),it).classes.map{c->c.type}.toSet()}
         check(setOf("Lapp/geminipatch/diagnostics/Capture;","Lapp/geminipatch/diagnostics/CaptureActivity;","Lapp/geminipatch/diagnostics/Schema;").all{it in types})
         check("Lapp/geminipatch/compat/HistoryUpdateCompatibility;" in types)
-        check(types.none{it.contains("HistoryUpdateFixture")||it.contains("CapabilitySubsetProbe")||it.contains("UpdateCompatibilityProbe")})
+        check(types.none{it.contains("UpdateFixture")||it.contains("CapabilitySubsetProbe")||it.contains("UpdateCompatibilityProbe")})
         check(jar.getJarEntry("diagnostics/profile.json")!=null)
     }
     println("Preview inventory verified: 18 named patches, exact versions, core compatibility and no test fixtures")

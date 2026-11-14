@@ -7,7 +7,7 @@ fun main(args:Array<String>){
  fun classes(path:String)=ZipFile(path).use{z->z.entries().asSequence().filter{it.name.matches(Regex("classes[0-9]*\\.dex"))}.flatMap{e->z.getInputStream(e).buffered().use{DexBackedDexFile.fromInputStream(Opcodes.getDefault(),it).classes.toList()}.asSequence()}.toList()}
  val original=classes(args[0]);val candidate=classes(args[1])
  check(candidate.any{it.type=="Lapp/geminipatch/compat/HistoryUpdateCompatibility;"})
- check(candidate.none{it.type.contains("HistoryUpdateFixture")||it.type.contains("CapabilitySubsetProbe")||it.type.contains("UpdateCompatibilityProbe")})
+ check(candidate.none{it.type.contains("UpdateFixture")||it.type.contains("CapabilitySubsetProbe")||it.type.contains("UpdateCompatibilityProbe")})
  fun method(cs:List<com.android.tools.smali.dexlib2.iface.ClassDef>)=cs.single{it.type=="Latze;"}.methods.single{it.name=="a"&&it.parameterTypes==listOf("Ljava/lang/Object;")&&it.returnType=="V"}
  val before=method(original);val after=method(candidate);check(before.implementation!!.registerCount==after.implementation!!.registerCount)
  val ins=after.implementation!!.instructions.toList();val first=ins[0]
@@ -16,5 +16,13 @@ fun main(args:Array<String>){
  check((first as RegisterRangeInstruction).startRegister==parameter&&first.registerCount==1)
  check(ins[1].opcode==Opcode.MOVE_RESULT_OBJECT&&(ins[1]as OneRegisterInstruction).registerA==parameter)
  check(ins.drop(2).map{it.opcode}==before.implementation!!.instructions.map{it.opcode}.toList())
+ fun stream(cs:List<com.android.tools.smali.dexlib2.iface.ClassDef>)=cs.single{it.type=="Laopx;"}.methods.single{it.name=="<init>"&&it.parameterTypes==listOf("Lgfeh;")}
+ val sb=stream(original);val sa=stream(candidate);check(sa.implementation!!.registerCount==sb.implementation!!.registerCount)
+ val si=sa.implementation!!.instructions.toList();val parameterStream=sa.implementation!!.registerCount-1
+ check(si[0].opcode==Opcode.INVOKE_STATIC_RANGE&&(si[0]as ReferenceInstruction).reference.toString()=="Lapp/geminipatch/compat/HistoryUpdateCompatibility;->filterStream(Ljava/lang/Object;)Ljava/lang/Object;")
+ check((si[0]as RegisterRangeInstruction).startRegister==parameterStream&&(si[0]as RegisterRangeInstruction).registerCount==1)
+ check(si[1].opcode==Opcode.MOVE_RESULT_OBJECT&&(si[1]as OneRegisterInstruction).registerA==parameterStream)
+ check(si[2].opcode==Opcode.CHECK_CAST&&(si[2]as OneRegisterInstruction).registerA==parameterStream&&(si[2]as ReferenceInstruction).reference.toString()=="Lgfeh;")
+ check(si.drop(3).map{it.opcode}==sb.implementation!!.instructions.map{it.opcode}.toList())
  println("Core-only candidate verified: exact receive parameter, original register/instruction sequence retained, no fixture/subset/probe classes")
 }
