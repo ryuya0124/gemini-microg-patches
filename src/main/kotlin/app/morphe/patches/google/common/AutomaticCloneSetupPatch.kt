@@ -31,7 +31,7 @@ val automaticCloneSetupPatch = resourcePatch(
     description = "Automatically creates the fixed .morphe clone and isolates its permissions and providers. No official Clone app or Expert mode configuration is required.",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox", "com.google.android.apps.bard")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox", "com.google.android.apps.bard"))
     var input: CloneManifestInput? = null
 
     execute {
@@ -66,9 +66,8 @@ val automaticCloneSetupPatch = resourcePatch(
             when {
                 it.startsWith("@string/") -> it
                 it.startsWith('@') -> error("Unsupported provider authority resource: $it")
-                it.startsWith("$original.") -> clone + it.removePrefix(original)
                 it.isBlank() -> error("Empty provider authority")
-                else -> "${clone}_$it"
+                else -> CloneProviderNames.renamed(it, original)
             }
         }
         document("AndroidManifest.xml").use { doc ->

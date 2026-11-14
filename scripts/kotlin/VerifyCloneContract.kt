@@ -1,4 +1,5 @@
 import app.morphe.patches.google.common.ClonePermissionNames
+import app.morphe.patches.google.common.CloneProviderNames
 import com.reandroid.apk.ApkModule
 import com.reandroid.arsc.chunk.xml.ResXmlElement
 import com.android.tools.smali.dexlib2.Opcodes
@@ -61,17 +62,26 @@ fun main(args: Array<String>) {
         "Provider authority collision: ${oldAuthorities intersect newAuthorities}. Keep Automatic Clone Setup selected."
     }
     check(patched.nodes.count { it.tag == "provider" } == original.nodes.count { it.tag == "provider" })
+    val providerNames = oldAuthorities.associateWith { CloneProviderNames.renamed(it, original.packageName) }
+    check(newAuthorities == providerNames.values.toSet()) { "Provider declarations do not match their clone namespace" }
     var staleDex = 0
+    var staleProviderDex = 0
+    fun reference(value: String?) {
+        if (value in names.keys) staleDex++
+        if (value != null && CloneProviderNames.replacement(value, providerNames, original.packageName) != null)
+            staleProviderDex++
+    }
     ZipFile(args[1]).use { z -> z.entries().asSequence().filter { it.name.matches(Regex("classes[0-9]*\\.dex")) }.forEach { entry ->
         val dex = z.getInputStream(entry).buffered().use { DexBackedDexFile.fromInputStream(Opcodes.getDefault(), it) }
         for (clazz in dex.classes) {
-            for (field in clazz.fields) if ((field.initialValue as? StringEncodedValue)?.value in names.keys) staleDex++
+            for (field in clazz.fields) reference((field.initialValue as? StringEncodedValue)?.value)
             for (method in clazz.methods) for (instruction in (method.implementation?.instructions ?: emptyList())) {
                 val string = ((instruction as? ReferenceInstruction)?.reference as? StringReference)?.string
-                if (string in names.keys) staleDex++
+                reference(string)
             }
         }
     } }
     check(staleDex == 0) { "$staleDex stale custom-permission strings remain in DEX" }
-    println("Clone contract verified: $clone; ${names.size} isolated permissions with unchanged protection; no stale manifest/DEX permission references; ${newAuthorities.size} noncolliding providers")
+    check(staleProviderDex == 0) { "$staleProviderDex stale owned-provider authority/URI strings remain in DEX" }
+    println("Clone contract verified: $clone; ${names.size} isolated permissions with unchanged protection; no stale manifest/DEX permission/provider references; ${newAuthorities.size} noncolliding providers")
 }

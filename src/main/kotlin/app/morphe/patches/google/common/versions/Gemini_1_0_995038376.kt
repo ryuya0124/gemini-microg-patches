@@ -14,6 +14,10 @@ val gemini10995038376 = AppVersionProfile(
         "2026-11-12: API36 emulator shell UID2000: original Google coexistence, Lens permission-gate before/after and clone launcher routing verified; no account/chat test"
     ),
     hooks = mapOf(
+        HookId.PROVIDER_AUTHORITY_REDIRECT to TargetSpec(
+            integers = mapOf("providerCount" to 1),
+            description = "Discover owned provider authorities from the original manifest and keep DEX/resource URI references in the same clone namespace."
+        ),
         HookId.GEMINI_TARGET_REDIRECT to TargetSpec(
             anchorStrings = listOf("com.google.android.googlequicksearchbox"),
             expectedMatches = 4,

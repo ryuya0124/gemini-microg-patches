@@ -15,7 +15,7 @@ val deviceComplianceRedirectPatch = bytecodePatch(
     description = "microG利用時にGoogleアプリ内の未認定警告へ転送するローカル分岐を抑止します。端末認定は変更しません。",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
     execute {
         val feature = VersionHookRegistry.target(HookId.DEVICE_COMPLIANCE_FEATURE, packageMetadata)
         val featureClass = getAllClassesWithString(feature.anchorStrings[0]).single()

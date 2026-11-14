@@ -1,6 +1,32 @@
 # 引き継ぎメモ
 
+## 2026-11-14 diagnostics2公開・原因調査継続
+
+ユーザーの依頼によりログ不具合を修正し、[v0.3.5-diagnostics.2](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.5-diagnostics.2) を診断専用プレリリースとして公開。[Issue返信6871766839](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6871766839) で同じAPK・署名・データを保った更新と再記録を短く依頼。通常修正版ではない。stableは引き続きv0.3.5、root feed変更なし、Issueの警告は未再現・原因未特定。
+
+ソース別branch `diagnostics/issue8-logs` の69040ef8a5dcd5016f3a773aff3be7ad8f640335。Windows work/diagnostics-issue8 /Mac /Users/ryuya/Documents/GeminiPatch-diagnostics は同期・clean。最終CI43556906747成功、通常release job43557118065はprereleaseタグでskip。MPP232359bytes/SHA256 0dc1604ce5c4c6401bb1e8ebe6ec34d7b4867073de31b399df0b680c0fbdb61d、Mac実測版・CI・公開asset一致。公開はMPP/別diagnostics feed/checksumのみ。APK/キー/生ログは公開していない。
+
+Android12で旧版に履歴5000件を集中させ、turn/stream/capabilities/requestVersion欠落を再現。修正版は種類別の有界キューで履歴の繰り返しsnapshotをまとめ、別種の重要イベントを保持。merge回数と予期しない欠落を区別する。background file lock待機、process別のpending/loss/停止ACK、未知/終了processをincompleteとして残す方式へ変更。20000件の並列producerテスト、native疑似1086、native tm.oの実setText経由の呼び出し元記録・表示内容維持・canary非流出、全1685setterのregister確認が成功。元Googleがinventoryから消えたのはMorpheがStringBuilderをliteral化してclone名へ書き換えたためとactual Manager APKで判明し、診断namespaceだけ除外して4キー保持を確認。診断画面の独立task化も確認。
+
+Google17.72.17で同じ自作Web起点会話を元Geminiあり/実際にuser0から削除の両方で継続成功。capability9(BARD_APP_USER)は元Geminiの有無に応じて変化したが、警告は再現しなかった。この差だけを直すパッチやread-only省略は公開しない。2つの初期実会話captureは4process全ACK・予期しないloss0。最終captureはOSがidleな2processをempty #17で終了した記録に対応してincomplete=trueを返し、UIの0を全体の0と誤認しないことも確認。最終版自体も返答成功。actual Morphe Manager2.5/Patcher2.3で標準12patchから生成・署名・16KiB整列・起動・文書選択経由JSON保存が成功、3process全ACK・loss0・4inventoryキー保持。Manager APK314703433bytes/SHA256 b9f9062be95979672b06ec31ad3a0f4b4ed0cef9a75699120bf2b09d868d82c9。
+
+元Geminiの復元はinstall-existingだけではAPK実体を戻せない場合があるため、保持した正確な5つのoriginal APKを再インストールしてpath/hash/UID10153/code345を確認。全stock/clone APKセット・UID・同一stock/microGアカウントは最終復元済み。account-free Managerテストcloneだけdowngrade用に削除し元APKセットへ戻した（そのテストデータのみリセット）。Galaxy未操作。自分で起動したaccount-free AVD5582は終了し、ログイン済み5584は維持。詳しい記録は別branch [diagnostics/logging-v2-2026-11-14.md](https://github.com/ryuya0124/gemini-microg-patches/blob/diagnostics/issue8-logs/diagnostics/logging-v2-2026-11-14.md)。次の報告者JSONでknown_warning_setterの固定class/methodとview/resource/ancestorsを照合し、実際のrenderer経路を特定する。追加の環境質問はしていない。
+
+## 2026-11-14 Issue #8 添付ログの解析
+
+報告者から診断ログを受領。[解析と観測上の制約](https://github.com/ryuya0124/gemini-microg-patches/blob/diagnostics/issue8-logs/diagnostics/reporter-log-2026-11-14.md) を別branchへ記録。警告文の画面表示は自動検出したが、native processでqueueDropped1356があり、status/stream無しを除外根拠にできない。StopのqueueDropped0/observedCounters空はUI processだけの値。原Googleキーもinventoryから欠落し、未インストールとは断定不可。Google17.72.17/API31、Gemini1.0.995038376は確定。受領のお礼と調査中であることを短く返信（コメント6870953180）、追加質問無し。原因特定・自然な再現・修正は未達で、新しいアプリ変更/リリース/実機変更はしていない。次はメタデータ大量ロードでの計測取りこぼし、process別summary、警告を描くnative view/rendererの対応を調べる。raw reportはdiagnostic worktreeのignored local/reporter-20261114に保持。
+
 更新: 2026-11-13（最新の追記は末尾）
+
+## 2026-11-13 診断版の作業中メモ
+
+追記（公開完了）: 診断専用プレリリース [v0.3.5-diagnostics.1](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.5-diagnostics.1) を公開し、[Issueコメント6852606011](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6852606011) で導入・JSON添付を短く依頼済み。修正版ではない。タグsourceはe47b11be2087b6be890c274dcb648ff92fc397ea、最終CI43423478830成功。MPP225524bytes/SHA256 fa31403d1e28a8d5a4caf53d2d89290511f52c8fb578dac98b56d2849b6bffd7、Mac検証版・CI生成物・公開asset一致。最新stableは引き続きv0.3.5。プリリリースタグの通常release job43423697728は予定どおりskip。公開MPP・別diagnostics feed・checksumのみでAPK/署名キーは配布していない。ローカル/リモート別branchを揃え、Macの診断worktreeはclean。
+
+Android版Morphe2.5/Patcher2.3の標準12選択でも単体Google17.72.17から生成・署名・起動・文書選択経由JSON保存を確認。外部JVM hostにdesktop用JSON実装が無かったため、ビルド時に元JSONからPropertiesを生成し標準Javaだけで読む方式へ変更した。メモリ2GBのテストAVDはpatcher強制終了したため4GBで再確認。account-freeテストcloneだけ旧版へ入れ直して元APKセット復元（そのテストデータはリセット）、ログイン済みAVDは別途同一署名の更新だけで検証し全stock/clone APK・UID・アカウント復元確認。実機未操作。手動warningマーカーのテスト・native疑似1086を自然な不具合再現と混同しない。報告者のログ待ち。追加の事実質問はしていない。
+
+ユーザーの「ログ追加して入れてもらう」提案を受け、公開v0.3.5を基準に別worktree/branch `diagnostics/issue8-logs` で診断専用MPPを準備中。Windows `work/diagnostics-issue8`、Mac `/Users/ryuya/Documents/GeminiPatch-diagnostics`。通常の最新候補の未コミット変更とは混ぜない。対応はGoogle17.72.17.ve.arm64のみ。明示Start後だけ収集し、会話本文・アカウント・URL等を保存せず、Androidの文書選択画面からJSONを書き出す。実際のIssue警告は未再現で、修正リリースのゲートは維持する。
+
+旧private observerのRETURN前挿入は既存分岐がログを飛ばすと判明。旧ログにstatus/classifiedが無いことからサーバー応答を除外してはいけない。診断版では元RETURN位置をinvokeに置き換えRETURNを後置。全1/6帰還経路とnative疑似1086の実記録、canary非流出、停止直後の保存を確認。Android12のログイン済みAVDでは自作Web会話への返答と実際のJSON保存成功。終了後は4つのstock/clone APKセット・UID・同一アカウントを完全復元。Galaxyは未操作。詳細・残作業は別branch `diagnostics/README.md`。
 
 ## リリース本文の方針
 
@@ -222,3 +248,73 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - APK入力guard追加後のManager最終マトリクスも23/23成功。証拠はMacのlocal/issue8/play-store/manager-final-results、集計JSONのWindows控えはoutputs/v0.3.5-evidence。認証済UI XMLは公開しない。
 - [Issue返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6827381066)で原因と、原本両APKをsource既定選択＋任意の更新停止で再パッチする方法を短く案内。Issueは閉じていない。投稿者の実機での解消報告はまだない。
 - 専用の旧回帰AVD5580/5582は名前を確認して停止。ユーザーがログインしたPlay Store AVD5584とWindowsのscrcpy画面は維持し、アカウント/公式アプリを消去していない。実機/Tail ADB/ADBサーバーは変更・停止していない。
+
+## Issue #8 会話内の更新要求（2026-11-13、調査中）
+
+- 追加画像はConversation requires an updateという既存会話内の表示。利用者は原因確定・エミュレータ再現・修正確認後の公開を明示。まだ再現/原因確定しておらず、新版や警告抑止を準備しない。
+- 公式Play Store AVD5584の昨夜のstockログインは残っていた。利用者の許可で公式Geminiの初回案内を進め、テキスト応答と画像生成を確認。microG RE7.3.0を同じAVDへ追加し、利用者が手動ログイン。改造版の新規チャット応答と、公式版で作成した画像会話の読込も成功した。
+- Windowsの旧scrcpy/トンネルは停止済みだったため再表示。タイトルGeminiPatch_microG_Android12。再起動で切断されるため、セッションの最新記録はWindowsのoutputs/playstore-desktop-session.jsonを参照し、再利用前に実在確認する。ログイン中は画面取得を停止した。
+- 原本GoogleのenumにUNSUPPORTED_CLIENT_TOO_OLD /1086があるが、現時点で実際にそのエラーが起きた証拠はない。起動版チェックのログだけを根拠にフックしない。投稿者返信6839017500は既存会話で発生・新規は未試行・Google17.72.17。
+- 現状と次の検証はdocs/testing/issue-8-conversation-update.md。private証拠はlocal/issue8/conversation-update。実機変更なし。会話互換性やサーバー原因だとまだ断定しない。
+- 利用者は確認依頼が先行したことを指摘し、削除を指示。今回の確認依頼2件はGitHub CLIで投稿者/Issue/本文を確認して削除し、不在も検証済み。当時は追加質問を停止。追加デバッグ後の質問許可は後述の最新指示を優先する。
+- 実Manager両APKでも既存の画像会話/Canvas会話へ新規送信し、固有のIMAGE_MANAGER_OK/CANVAS_MANAGER_OKを受信した。両方MAX、Google自身の実コード301831138復元と相手MAX維持の実プローブも成功。元Googleだけ無効/元Geminiだけ無効/両方無効の3条件でも既存会話から各固有応答を受信。finallyで元のenabled値・版を完全復元した。削除状態とは区別する。
+- 最新指示は「原本の版をそろえた上でアプデ無効パッチ」。公式Storeから入ったGoogle17.72.17.ve.arm64/301831138とGemini1.0.995038376/345を全split付きで取り出した。Google base SHA63721fbf8f688e8aff45af942856d5f23583549306413f156f627aa8a849cdb8、Gemini baseは既知793fdf...と一致。Google14DEXは前のAPI30原本とすべて一致するがManifest/resources/assetsのパッケージングは異なる。
+- local/issue8/conversation-update/build-store-pair.shで、当該原本に公開0.3.5MPPの既定＋Disable Play Store updatesを適用・導入済み。全8APK（base2、split6）は同じclone名/MAX/既存署名にそろえ、署名と16KiB整列を事前確認。既存画像会話/Canvas会話でSTORE_ALIGNED_IMAGE_OK/STORE_ALIGNED_CANVAS_OKを受信し、再起動後も警告なし。版をそろえた条件でも報告の警告は未再現。
+- 原本Geminiだけuser0から一時削除（データ保持）した比較も実施。実際のpackage判定で原本なし/cloneありを確認した上で既存2会話が新規応答。最後に原本Gemini code345/UID10153/enabled1/installed=trueへ復元済み。Google原本は削除していない。実機変更なし。
+- 別件のProvider参照変更漏れを通常UIDで再現。Manifestだけclone authorityとなり、DEXのURI/Provider内チェックが旧名のままでStateDumpProvider.queryが例外。ローカル候補でManifest由来のauthority/URI参照を統一し、同じContentResolver queryがFAIL→PASS。会話警告の原因と判明したわけではない。警告を隠すフックや機能制限解除は追加していない。
+- ローカル候補は同じ原本＋更新無効化から作成し、同じ署名で上書きしてclone UID/アカウントを維持。画像/Canvas既存会話からPROVIDER_IMAGE_OK/PROVIDER_CANVAS_OKを新規受信。両アプリ実ランタイムのown/foreign/int/long/major版テストも成功。現時点のAVD5584はこの未公開候補。private証拠はprovider-candidate/。sourceの版別Kotlin/JSONと静的contract検査も更新。
+- baselineの公開0.3.5MPPは182391 bytes/SHA c8fde8...1778のまま保持。候補はbuild/gemini-patches.jarでのみ生成し、公開MPPを上書きしていない。Windows branch investigate/issue8-conversation-compat、未commit、push/tag/release/追加返信なし。Macのsourceにも同じ候補を反映済み。失敗したconsole診断でrootは得られておらず、データを消さず通常起動へ戻した。
+
+### Macで最新版取得・対応版明記・追加デバッグ（2026-11-13）
+
+- 利用者は追加デバッグ、Morpheの「全バージョン」表示廃止、Issue報告版/現行版/最新版と今後の追加への対応を要求。全16名前付きパッチのcompatibleWithをVersionHookRegistry.compatibilityFor経由へ変更。未登録版と異なるversionCodeは従来どおり拒否。コンパイル済みの全エクスポートを検査し、null/空/不一致の対応版一覧をCIで拒否する。docs/versions/README.mdの版表も同じ登録内容から生成する。
+- Windowsブラウザはツールが未対応として停止。Macの既存Codexチャットへ取得だけ依頼し、SafariからGoogle17.74.18.sa.arm64/301834567/API30+nodpi単体APKを確保。407168160 bytes、SHA256 dadbf2fa043f5d7b07a6d0ca57a427139e274e69a4331794d18a4d3cc7f9adbc。原本未変更。API24–32のGoogle署名f0fd6c...db83とAPI33+の鍵ローテーションを検証。source/Git/鍵/AVDは補助チャットに変更させていない。取得先local/issue8/latest-20261113、download-verification.json参照。
+- DexKitの8一意候補+5プロセス名候補から実DEXを確認し、Google_17_74_18.ktを追加。プロセス名Leuhx.bのキャッシュ/初回は実DEXで共通RETURN1か所、トランポリンindex146→392、MainActivity.d:Z/code793/v0/23registers、Provider28件。Jadxの見かけのreturn2つを数に使わない。ローカル候補でstatic7項目+clone契約+署名+16KiB整列を確認。
+- 17.72.17に一時的な観測拡張を入れ、Google/Gemini更新停止の全4組合せを同じUID/アプリデータのまま比較。全組合せで画像/Canvas既存会話へ新規返信。観測したconstructedVersionは正しい17.72.17.ve.arm64、capability数/hash集合も全組合せ一致、警告/readonly/error分類なし。全通信のキャプチャではなく、eligibility requestVersionの観測点は発火しなかったことに注意。診断APKは4KiBページAPI31専用で、16KiB非対応の再処理ライブラリを含むため配布禁止。現在の認証済みAVDからは削除済み（通常APKで上書き）。
+- Google原本をuser0から一時削除・データ保持した条件も新規返信できた。finallyで元UID/版/enabledを復元。その後、専用認証済みAVD5584の公式Googleを17.74.18へ同UID更新。公式最新版で画像/Canvas会話を更新し、旧17.72.17 cloneが新しい公式ターンを読んだ上で返信、次に17.74.18 cloneでも同じ会話に返信。新規画像生成と通常Android再起動後の返信も成功。同じstock/microG account各1件を保持。
+- 5584の現状は公式Google17.74.18.sa.arm64/301834567、公式Gemini1.0.995038376/345、両clone同名版/MAX。Googlecloneは単体APK、Geminicloneはbase+4split。UIDとログインを保持し、observerコード/debuggableは通常候補への上書きで除去。実機への更新・設定変更なし。Windows scrcpyを再表示、outputs/playstore-desktop-session.json（SSH9951/scrcpy15275、再利用前に実在確認）を参照。
+- 別のアカウント未登録AVD5582で検証専用MPP0.3.6-dev.20261113をManager2.5へ読込。実画面にGoogle4版/Gemini2版の具体名を確認し、Expert OFFの標準11パッチで最新版Googleを実生成・保存。Manager出力2ae95d...28b8はstatic全項目/署名/16KiB/インストール/ネイティブ起動/実プロセス名3経路を成功。更新停止なし標準出力なのでcode301834567で正しい。認証済み5584のデータ削除とは区別。容量確保で5582 Downloadの古い5重複APKだけを、host保存物とのSHA一致確認後に削除。host証拠は維持。検証終了後にこの5582だけ停止し、認証済み5584/Windowsの画面は保持。
+- 配布済み0.3.5MPP c8fde8...1778、patches-bundle.json、公開タグ/リリースは変更なし。追加のprivate MPPはlocal/issue8/latest-20261113/mppに隔離（29class JVM/DEX、inventory.json）。実テスト後のsource更新はvalidationテキスト/説明の追記だけで実行フック対象は不変。会話内の更新要求は未再現・原因未確定なので、この警告を修正したとは扱わず公開しない。この時点では追加質問も停止していたが、次の最新指示で許可された。詳細はdocs/testing/issue-8-conversation-update.md。
+
+### 追加質問を許可・Issueへ投稿（2026-11-13、後に質問停止）
+
+- 利用者が「未再現のため追加の質問を許可する」と明示。以前の質問停止はこの指示で解除。公開条件（原因特定、エミュレータで再現・修正確認）は維持。
+- [追加質問6846494726](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6846494726)を短い英語で投稿し、本文/投稿者/保存先を読み戻して確認。Geminiアプリ版とモデル、会話の作成元とGem/Canvas/Deep Researchの使用、新規会話とWebでの継続可否を尋ねた。Google17.72.17は既に回答済みなので再質問していない。
+- 返信待ち。Issueを閉じず、修正済みとは述べず、リリース/タグ/公開MPP/アプリの状態は変更していない。返答を次の再現条件に反映する。
+
+### サーバー応答の調査・追加質問停止（最新指示）
+
+- 利用者がサーバー側の応答を疑い、「これ以上の追加質問はせず調べて」と指示。質問許可はここで終了。既存の投稿は消さず、追加質問せず、返信待ちで調査を止めない。
+- 受信側の構造化エラー/会話メタデータから警告表示までを調べる。過去のconstructedVersion/capability観測だけでは受信応答は追えていない。enumの存在だけでサーバー原因と断定せず、合成エラーの表示試験と自然発生した不具合を区別。原因確定・実再現・修正確認後の公開条件は維持。
+- 原本17.74.18でazim.aがgrpc-status-details-binのRobinStatusを解析し、gszm.c=詳細コード/d=サーバー文面を扱うことを確認。atix.b/awnq.dにはflag付き文面上書き、awno.mにその表示経路がある。1086の標準文面はGoogleアプリ更新要求で、報告の会話カードと異なる。1086が今回の原因とはまだ言えない。
+- ProcessQueryの受信はguvm、送信はguvj。最初のobserverは向きを誤り、一覧gsapだけで上限にも達していた。v2は実受信atti入口/guvm拡張を観測し、画像/Canvasへの新規返信時17受信入口・228値スキャン、画像編集＋続行時33入口・232値スキャンを記録。いずれも更新カード/観測点のエラー/readonly/既知警告文面は出なかった。選択箇所とサイズ/件数上限があるため全通信の否定には使わない。
+- INTERNET権限のない別UIDの合成プローブで、実APKのgRPC trailer解析→1086分類と、nativeエラー文面上書き表示を成功。自然再現や修正ではない。プローブは終了後削除済み。GSAPのDailyBrief、GSAVの予定タスク、plan由来readonlyなどの別経路も切り分け、抑止フックは追加していない。
+- 計測APKは各finallyで通常Google候補SHA847704...5550/UID10182/MAXへ復元。最終checkerで原本/clone全4セットのAPK hash/UID/版、stock/microG各1の同一アカウント保持を確認。実機変更なし、公開0.3.5MPP c8fde8...1778は不変。Issue最新は既存質問6846494726のまま、新規質問/返信/公開なし。
+- 詳細と次の解析点はdocs/testing/issue-8-server-response.md。private証拠local/issue8/server-response/{observer-v2,observer-image,status-probe}。合成probeの初回はgRPC定数名の難読化で失敗したが、実fromCodeValueへ修正して最終PASS。アプリの不具合とは区別。会話カードは未再現・未解決であり、公開条件は未達。
+- 追加の負の対照で、grpg.cの申告capabilityだけをコピー上で空にするprivate拡張を2送信構築点へ追加。29回実適用した画像/Canvasのテキスト続行は成功。画像新規要求では16回適用・受信11回、固有ackだけ返り181.6秒で画像なしのためharnessはFAIL（成功扱いしない）。どちらも報告カード/観測点のerror/readonlyはなし。全capability削除はfallback対応も除くため、選択的な不足を否定する試験ではない。失敗時もfinallyで通常APK/hash/UIDを復元。証拠reduced-caps/reduced-image、配布禁止。
+- 復元後に両会話からRESTORED_SERVER_CONTROLの新規返信、同じ赤四角/白背景の画像要求でRESTORED_CAP_IMAGE_OK＋画像を15.5秒で確認。単発なので速度比較ではない。最終4アプリhash/UID/版とstock/microG同一account維持も再確認。restored-image/とfinal-state.json参照。警告そのものは最後まで未再現。
+
+### 投稿者の追加回答とWeb由来の会話（2026-11-13）
+
+- [返信6847166384](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6847166384)を読み直した。「Gemini auto」、Webで作成後にアプリでも複数prompt、Gem/Canvas/Deep Researchなし、新規chatとWeb継続は可能。Gemini APK正確版は未提示。「Auto」とこちらのモデルUIが同じとは断定しない。追加質問禁止は継続、新規のIssue投稿なし。
+- 5584のChromeを既存test accountで初期化し、stock/microGとWeb account表示の一致をローカル比較、履歴syncは拒否。メール表示のUnicode Cfを除いて比較すること（初回の文字列不一致はアカウント違いではなかった）。Webで新規の通常会話を作成・WEB_ORIGIN_PLAIN_OKを受信し、GeminiPatch Issue8 web plain regressionと改名。private URLはUIから取得してlocalのみ保存、他会話は開かない。
+- 最新17.74.18 cloneで当該Web返信を読みWEB_LATEST_PLAIN_OK、Webに戻りそのnative返信を読みWEB_CONTINUE_PLAIN_OKを受信。公開0.3.5のStore入力17.72.17/345両clone・全8APKへ同キー上書きした条件でも、当該会話からWEB_REPORTED、FOLLOWUP、FINALの各新規返信が成功。stock原本Googleは最新17.74.18のままなので完全な原本pair降版とは言わない。
+- 同じWeb会話にGoogleアプリ無効化の説明（実行しない、番号リスト/表/シェルコード）を要求し、WEB_CONTINUE_RICH_OK・adb shell文字列・コードcopy操作・table widgetを確認。Webのモデルは4 Hydrogen/思考低、native見出しGemini Everyday helpで、Auto同名選択肢はまだ確認できていない。詳細docs/testing/issue-8-web-origin.md、private local/issue8/web-origin。
+- 元の古いmarkerが画面外になった連続試験と、長文marker未確認の初回は送信前INCONCLUSIVE。アプリ障害に数えない。harnessは既知の自分の会話内のRecyclerViewを最新側へscrollし、直近markerを確認、既存ackを拒否するよう修正。旧pair wrapperは各finallyで通常候補の全hash/UID/版を復元する。
+- 長文の追加切り分けでは、Webの段落/inline要素がnativeで151文字の1 TextViewへ結合され、目印が独立行でなくなっていた。送信前に止まったRich初回/retry/latestは検査側の誤判定で、同じ更新カードはなし。markerはassistant_robin_text内で確認するよう修正（user prompt内の同名markerは除外）。最新版で長文Web markerをscroll0回で確認後、WEB_RICH_CURRENT_PLAIN_OKを新規受信。アプリの修正ではなくharnessの修正。
+- その長文を含む同一会話で公開17.72.17 pairからWEB_RICH_BASELINE/NEXTの2新規返信も成功。最新版両cloneの完全復元後、Webが最後の旧native返信を読みWEB_CONTINUE_FINAL_OKを返すところまで成功。正の結果はreported-pair-followup/、reported-rich-final/、各WEB_*結果とweb-continue-{PLAIN,RICH,FINAL}.json。初回INCONCLUSIVE群は成功/アプリ障害のどちらにも数えない。報告の更新カードは依然未再現、Auto同一条件も未確認なので公開条件未達。
+- 最後に復元済み最新nativeがWebのFINAL返信を読み、WEB_FINAL_RESTORED_PLAIN_OKを新規受信。原本/clone全4 APKセットhash/UID/版とstock/microG各1の同一account保持をfinal-state.jsonで再確認。現在5584は元の通常候補17.74.18/345の両clone、診断コードなし、作業用の自分の会話をnativeで表示。ChromeのWebログインも維持。新規質問・Issue返信・push・tag・releaseはなし。公開0.3.5MPP/更新JSONは不変。
+
+## Issue #8: diagnostics3 and reporter2 (2026-11-14)
+
+- Reporter comment6872288929 supplied diagnostics2. All4 processes acknowledged stop, minimumObservedLoss=0; metadata coalescing remains intentional. Native setter/view evidence identifies PuntDisclaimer (bhej/biyy), not a quotation in assistant text. Full analysis: diagnostics/reporter-log2-2026-11-14.md.
+- Source tracing found top-level gffq.d history warning -> aozi.z -> aofx.k -> bdci.e -> bdbo.w -> bckt -> bhej. gfeh.p/q and gfnl.k are distinct thread/turn sources. These findings establish the renderer/data path, not the cause or a fresh server rejection. Do not suppress punts or invent capabilities.
+- Diagnostics3 directly records warning submessage presence/behavior/known-warning flags and static locations; full history/generate envelopes are not serialized. Exact owning profile and register/site assertions retained. Synthetic native protobuf/5000-burst/privacy tests, authenticated Web-origin continuation/document-picker export (4 ACK/loss0), actual Android Manager default12 generation/install/export (3 ACK/loss0) and exact ordinary app restoration passed. Both dedicated AVDs stopped with data retained; Galaxy untouched.
+- Tested MPP233997 bytes SHA256 e4521891ea77059a1373e74decc4f04b96e0850bc1fbcfc007146ecf1dc97030. Diagnostic release only; stable v0.3.5/feed unchanged. Cause and natural reproduction/correction remain unverified, so no stable warning fix may be published.
+- LATEST USER INSTRUCTION: Every Issue reply requires the user's review BEFORE posting. Interim receipt/status comment6874790622 was explicitly deleted at the user's request; absence verified. Do not post an acknowledgment, capture request or status without review. A new capture request can be prepared for review, not sent automatically.
+
+## Diagnostics3 published (2026-11-14)
+
+- User requested the new diagnostic build. Published v0.3.5-diagnostics.3 as a prerelease: https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.5-diagnostics.3 . Target91955d6d6f9ca4c15197ffad41eb4bc93d0313be, CI43579120590 success. All three public assets downloaded and matched byte-for-byte with tested CI artifacts; MPP SHA256 e4521891ea77059a1373e74decc4f04b96e0850bc1fbcfc007146ecf1dc97030,233997 bytes.
+- Stable latest remains v0.3.5. Diagnostics3 only improves observation; warning trigger/cause and an actual fix remain unverified.
+- No Issue announcement/capture request posted. Draft remains outputs/issue8-diagnostics3-reply-draft.md; every new reply requires user review. Authorized explanation-only comment6875041545 is the current reply; deleted receipt/status comment6874790622 remains deleted.

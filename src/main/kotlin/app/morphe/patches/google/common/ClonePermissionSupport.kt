@@ -27,6 +27,7 @@ object ClonePermissionNames {
 
 private fun permissionSupport(originalPackage: String): app.morphe.patcher.patch.BytecodePatch {
     var names = emptyMap<String, String>()
+    var authorities = emptyMap<String, String>()
     val manifestReferences = resourcePatch {
         dependsOn(automaticCloneSetupPatch)
         execute {
@@ -41,6 +42,27 @@ private fun permissionSupport(originalPackage: String): app.morphe.patcher.patch
                     check(old.isNotBlank())
                     old to ClonePermissionNames.renamed(old, originalPackage)
                 }
+                val providers = doc.getElementsByTagName("provider")
+                VersionHookRegistry.requireProfile(packageMetadata).hooks[HookId.PROVIDER_AUTHORITY_REDIRECT]
+                    ?.integers?.get("providerCount")?.let { expected ->
+                        check(providers.length == expected) { "Unexpected provider count: ${providers.length}" }
+                    }
+                val declared = (0 until providers.length).flatMap { i ->
+                    read(providers.item(i) as Element, "authorities").split(';')
+                }
+                val resourceNames = declared.filter { it.startsWith("@string/") }
+                    .map { it.removePrefix("@string/") }.toSet()
+                val resolved = if (resourceNames.isEmpty()) emptyMap() else {
+                    document("res/values/strings.xml").use { strings ->
+                        val values = strings.getElementsByTagName("string")
+                        (0 until values.length).map { values.item(it) as Element }
+                            .filter { it.getAttribute("name") in resourceNames }
+                            .associate { it.getAttribute("name") to it.textContent }
+                    }.also { check(it.keys == resourceNames) { "Unresolved provider authority resources" } }
+                }
+                authorities = declared.flatMap { value ->
+                    (if (value.startsWith("@string/")) resolved.getValue(value.removePrefix("@string/")) else value).split(';')
+                }.associateWith { CloneProviderNames.renamed(it, originalPackage) }
                 val all = doc.getElementsByTagName("*")
                 for (i in 0 until all.length) {
                     val element = all.item(i) as Element
@@ -55,6 +77,15 @@ private fun permissionSupport(originalPackage: String): app.morphe.patcher.patch
                     }
                 }
             }
+            document("res/values/strings.xml").use { doc ->
+                val strings = doc.getElementsByTagName("string")
+                for (i in 0 until strings.length) {
+                    val element = strings.item(i) as Element
+                    CloneProviderNames.replacement(element.textContent, authorities, originalPackage)?.let {
+                        element.textContent = it
+                    }
+                }
+            }
         }
     }
     return bytecodePatch {
@@ -63,14 +94,26 @@ private fun permissionSupport(originalPackage: String): app.morphe.patcher.patch
             VersionHookRegistry.requireProfile(packageMetadata)
             check(packageMetadata.packageName == originalPackage && names.isNotEmpty())
             var rewritten = 0
-            val candidates = names.keys.flatMap { getAllClassesWithString(it) }.distinctBy { it.type }
-            for (clazz in candidates) {
+            var providerRewritten = 0
+            fun replacement(value: String): String? = names[value]
+                ?: CloneProviderNames.replacement(value, authorities, originalPackage)
+            classDefForEach { clazz ->
+                val hasReference = clazz.fields.any { field ->
+                    (field.initialValue as? StringEncodedValue)?.value?.let(::replacement) != null
+                } || clazz.methods.any { method ->
+                    method.implementation?.instructions?.any { instruction ->
+                        (((instruction as? ReferenceInstruction)?.reference as? StringReference)?.string)
+                            ?.let(::replacement) != null
+                    } == true
+                }
+                if (!hasReference) return@classDefForEach
                 val mutable = mutableClassDefBy(clazz)
                 for (field in mutable.fields) {
                     val value = field.initialValue as? StringEncodedValue ?: continue
-                    names[value.value]?.let { replacement ->
-                        (field.initialValue as MutableStringEncodedValue).value = replacement
-                        rewritten++
+                    val oldValue = value.value
+                    replacement(oldValue)?.let { newValue ->
+                        (field.initialValue as MutableStringEncodedValue).value = newValue
+                        if (oldValue in names) rewritten++ else providerRewritten++
                     }
                 }
                 for (method in mutable.methods) {
@@ -78,17 +121,18 @@ private fun permissionSupport(originalPackage: String): app.morphe.patcher.patch
                     for ((index, instruction) in method.instructions.toList().withIndex()) {
                         if (instruction.opcode !in setOf(Opcode.CONST_STRING, Opcode.CONST_STRING_JUMBO)) continue
                         val ref = (instruction as ReferenceInstruction).reference as? StringReference ?: continue
-                        val replacement = names[ref.string] ?: continue
+                        val newValue = replacement(ref.string) ?: continue
                         val reg = (instruction as OneRegisterInstruction).registerA
-                        val string = ImmutableStringReference(replacement)
+                        val string = ImmutableStringReference(newValue)
                         method.replaceInstruction(index, if (instruction.opcode == Opcode.CONST_STRING_JUMBO)
                             BuilderInstruction31c(Opcode.CONST_STRING_JUMBO, reg, string)
                         else BuilderInstruction21c(Opcode.CONST_STRING, reg, string))
-                        rewritten++
+                        if (ref.string in names) rewritten++ else providerRewritten++
                     }
                 }
             }
             println("[ClonePermissions] ${names.size} declared permissions; $rewritten DEX references updated for $originalPackage.morphe")
+            println("[CloneProviders] ${authorities.size} authorities; $providerRewritten DEX authority/URI references updated")
         }
     }
 }

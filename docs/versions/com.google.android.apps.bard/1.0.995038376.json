@@ -11,6 +11,22 @@
     "2026-11-12: API36 emulator shell UID2000: original Google coexistence, Lens permission-gate before/after and clone launcher routing verified; no account/chat test"
   ],
   "hooks": {
+    "PROVIDER_AUTHORITY_REDIRECT": {
+      "className": null,
+      "methodName": null,
+      "methodDescriptor": null,
+      "fieldName": null,
+      "fieldType": null,
+      "anchorStrings": [],
+      "methodSignatures": [],
+      "expectedMatches": null,
+      "integers": {
+        "providerCount": 1
+      },
+      "values": {},
+      "enabled": true,
+      "description": "Discover owned provider authorities from the original manifest and keep DEX/resource URI references in the same clone namespace."
+    },
     "GEMINI_TARGET_REDIRECT": {
       "className": null,
       "methodName": null,

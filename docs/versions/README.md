@@ -2,10 +2,18 @@
 
 パッチが実際に読む定義は `src/main/kotlin/app/morphe/patches/google/common/versions/` のKotlinファイルです。このディレクトリのJSONはその定義から生成した閲覧・比較用の記録です。JSONを手で編集せず、定義を変更して再生成します。
 
-| アプリ | 実行用定義 | 閲覧用記録 |
-| --- | --- | --- |
-| Google 17.54.18.ve.arm64 / 301800642 | [Google_17_54_18.kt](../../src/main/kotlin/app/morphe/patches/google/common/versions/Google_17_54_18.kt) | [JSON](com.google.android.googlequicksearchbox/17.54.18.ve.arm64.json) |
-| Gemini 1.0.958859967 / 332 | [Gemini_1_0_958859967.kt](../../src/main/kotlin/app/morphe/patches/google/common/versions/Gemini_1_0_958859967.kt) | [JSON](com.google.android.apps.bard/1.0.958859967.json) |
+<!-- supported-versions:start -->
+| アプリ | 対応versionName | versionCode | フック記録 |
+| --- | --- | --- | --- |
+| Google App (AGSA) | `17.54.18.ve.arm64` | 301800642 | [JSON](com.google.android.googlequicksearchbox/17.54.18.ve.arm64.json) |
+| Google App (AGSA) | `17.70.11.ve.arm64` | 301827586 | [JSON](com.google.android.googlequicksearchbox/17.70.11.ve.arm64.json) |
+| Google App (AGSA) | `17.72.17.ve.arm64` | 301831138 | [JSON](com.google.android.googlequicksearchbox/17.72.17.ve.arm64.json) |
+| Google App (AGSA) | `17.74.18.sa.arm64` | 301834567 | [JSON](com.google.android.googlequicksearchbox/17.74.18.sa.arm64.json) |
+| Gemini launcher | `1.0.958859967` | 332 | [JSON](com.google.android.apps.bard/1.0.958859967.json) |
+| Gemini launcher | `1.0.995038376` | 345 | [JSON](com.google.android.apps.bard/1.0.995038376.json) |
+<!-- supported-versions:end -->
+
+Morpheの対応版表示も同じレジストリから生成します。全バージョン対応は宣言せず、未登録のversionNameや異なるversionCodeは適用時にも拒否します。表は `scripts/check-hook-profiles.sh --write` で更新します。
 
 ## 記録する内容
 

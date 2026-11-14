@@ -18,9 +18,15 @@ val google177217 = AppVersionProfile(
         "2026-11-10: extracted installed original APK; DEX target inspection completed",
         "2026-11-10: APK/DEX/MPP verification completed; Secure Folder send/response confirmation pending",
         "2026-11-12: API36 emulator shell UID2000: original Google coexistence, Lens permission-gate before/after and clone launcher routing verified; no account/chat test",
-        "2026-11-12: actual APK first-call/cached/seeded process-name paths verified; old widget receiver DI crash reproduced and fixed"
+        "2026-11-12: actual APK first-call/cached/seeded process-name paths verified; old widget receiver DI crash reproduced and fixed",
+        "2026-11-13: authenticated API31: all four update-blocking combinations, original Google absent for user0 with restoration, and conversations updated by official17.74.18 all returned fresh replies; observed constructed versions/capability hashes identical across update-blocking cases; reported update card unreproduced"
     ),
     hooks = mapOf(
+        HookId.PROVIDER_AUTHORITY_REDIRECT to TargetSpec(
+            anchorStrings = listOf("content://com.google.android.apps.gsa.voiceinteraction.dump.StateDumpProvider"),
+            integers = mapOf("providerCount" to 27),
+            description = "Derive authority identities from the original manifest, including the root package authority. Redirect exact DEX strings and content:// URI authorities without changing MIME types or process identity constants."
+        ),
         HookId.DEVICE_COMPLIANCE_FEATURE to TargetSpec(
             className = "Lduhm;", methodName = "a", methodDescriptor = "(Lhikx;Lhikx;)V",
             anchorStrings = listOf("Checking for device compliance...", "Feature is disabled!"), expectedMatches = 1,

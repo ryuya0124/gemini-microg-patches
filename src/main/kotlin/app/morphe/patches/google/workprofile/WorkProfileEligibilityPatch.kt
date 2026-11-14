@@ -17,7 +17,7 @@ val workProfileEligibilityPatch = bytecodePatch(
     description = "Secure FolderでのWORK_PROFILE_NOT_SUPPORTED (19)を、既存のプロファイル許可分岐で回避します。",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
     execute {
         val spec = VersionHookRegistry.target(HookId.WORK_PROFILE_ELIGIBILITY, packageMetadata)
         val candidates = getAllClassesWithString(spec.anchorStrings[0])

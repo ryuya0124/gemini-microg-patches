@@ -3,6 +3,7 @@ package app.morphe.patches.google.common
 import app.morphe.patches.google.common.versions.google177011
 import app.morphe.patches.google.common.versions.gemini10995038376
 import app.morphe.patches.google.common.versions.google177217
+import app.morphe.patches.google.common.versions.google177418
 import app.morphe.patcher.PackageMetadata
 import app.morphe.patches.google.common.versions.google175418
 import app.morphe.patches.google.common.versions.gemini10958859967
@@ -24,6 +25,7 @@ enum class HookId(val displayName: String) {
     PROCESS_NAME_REDIRECT("プロセス名正規化"),
     MAIN_PROCESS_CHECK("アカウントストアのプロセス判定"),
     PACKAGE_CLONE_REDIRECT("クローンパッケージ参照"),
+    PROVIDER_AUTHORITY_REDIRECT("クローンProvider参照"),
     ACCOUNT_SWITCH_LOCK_BYPASS("無効: アカウントロック省略"),
     ACCOUNT_SYNC_LOOP_FIX("無効: Binder 成功偽装"),
     ACCOUNT_CONVERT_FALLBACK("無効: 固定 AccountId")
@@ -64,11 +66,20 @@ data class AppVersionProfile(
 
 object VersionHookRegistry {
     // Add a new version file and register it here. Never widen a verified version to .*.
-    val profiles: List<AppVersionProfile> = listOf(google175418, google177011, google177217, gemini10958859967, gemini10995038376)
+    val profiles: List<AppVersionProfile> = listOf(google175418, google177011, google177217, google177418, gemini10958859967, gemini10995038376)
 
     init {
         check(profiles.map { it.packageName to it.versionName }.distinct().size == profiles.size)
     }
+
+    /** Morphe's displayed compatibility and execution guards use the same exact versions. */
+    fun compatibilityFor(vararg packageNames: String): Array<Pair<String, Set<String>>> =
+        packageNames.map { packageName ->
+            val versions = profiles.filter { it.packageName == packageName }
+                .map { it.versionName }.toSet()
+            check(versions.isNotEmpty()) { "No verified versions for $packageName" }
+            packageName to versions
+        }.toTypedArray()
 
     fun findProfile(packageName: String, versionName: String): AppVersionProfile? =
         profiles.singleOrNull { it.packageName == packageName && it.versionName == versionName }

@@ -11,9 +11,28 @@
     "2026-11-10: extracted installed original APK; DEX target inspection completed",
     "2026-11-10: APK/DEX/MPP verification completed; Secure Folder send/response confirmation pending",
     "2026-11-12: API36 emulator shell UID2000: original Google coexistence, Lens permission-gate before/after and clone launcher routing verified; no account/chat test",
-    "2026-11-12: actual APK first-call/cached/seeded process-name paths verified; old widget receiver DI crash reproduced and fixed"
+    "2026-11-12: actual APK first-call/cached/seeded process-name paths verified; old widget receiver DI crash reproduced and fixed",
+    "2026-11-13: authenticated API31: all four update-blocking combinations, original Google absent for user0 with restoration, and conversations updated by official17.74.18 all returned fresh replies; observed constructed versions/capability hashes identical across update-blocking cases; reported update card unreproduced"
   ],
   "hooks": {
+    "PROVIDER_AUTHORITY_REDIRECT": {
+      "className": null,
+      "methodName": null,
+      "methodDescriptor": null,
+      "fieldName": null,
+      "fieldType": null,
+      "anchorStrings": [
+        "content://com.google.android.apps.gsa.voiceinteraction.dump.StateDumpProvider"
+      ],
+      "methodSignatures": [],
+      "expectedMatches": null,
+      "integers": {
+        "providerCount": 27
+      },
+      "values": {},
+      "enabled": true,
+      "description": "Derive authority identities from the original manifest, including the root package authority. Redirect exact DEX strings and content:// URI authorities without changing MIME types or process identity constants."
+    },
     "DEVICE_COMPLIANCE_FEATURE": {
       "className": "Lduhm;",
       "methodName": "a",

@@ -29,7 +29,7 @@ val accountSwitchLockBypassPatch = bytecodePatch(
     description = "UNSUPPORTED historical experiment. Do not select: breaks account synchronization/login. Patching will stop if enabled.",
     default = false
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
 
     execute {
         VersionHookRegistry.requireProfile(packageMetadata)
@@ -102,7 +102,7 @@ val accountSyncLoopFixPatch = bytecodePatch(
     description = "UNSUPPORTED historical experiment. Do not select: breaks account synchronization/login. Patching will stop if enabled.",
     default = false
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
 
     execute {
         VersionHookRegistry.requireProfile(packageMetadata)
@@ -162,7 +162,7 @@ val accountConvertFallbackPatch = bytecodePatch(
     description = "UNSUPPORTED historical experiment. Do not select: breaks account synchronization/login. Patching will stop if enabled.",
     default = false
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox")
+    compatibleWith(*VersionHookRegistry.compatibilityFor("com.google.android.googlequicksearchbox"))
 
     execute {
         VersionHookRegistry.requireProfile(packageMetadata)

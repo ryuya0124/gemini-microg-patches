@@ -1,6 +1,9 @@
 import app.morphe.patches.google.common.HookId
 import app.morphe.patches.google.common.VersionHookRegistry
+import app.morphe.patcher.patch.Patch
 import java.io.File
+import java.lang.reflect.Modifier
+import java.util.jar.JarFile
 
 /** Assert unsupported inputs fail; keep reviewable JSON records in sync with executable profiles. */
 fun main(args: Array<String>) {
@@ -64,7 +67,53 @@ fun main(args: Array<String>) {
         "config/inputs.sha256 must select a complete recorded version for each app"
     }
     check(active.flatMap { it.inputSha256.entries }.associate { it.toPair() } == lockedInputs)
-    println("Version profiles verified: exact versions/codes, unknown-version rejection, input hashes, JSON records")
+
+    // Inspect the exported patch objects, not source text: these are the values Morphe reads.
+    val expected = VersionHookRegistry.profiles.groupBy { it.packageName }
+        .mapValues { (_, profiles) -> profiles.map { it.versionName }.toSet() }
+    val exported = linkedMapOf<String, Patch<*>>()
+    JarFile(File(root, "build/gemini-patches.jar")).use { jar ->
+        jar.entries().asSequence().filter { it.name.endsWith("Kt.class") }.forEach { entry ->
+            val type = VersionHookRegistry::class.java.classLoader.loadClass(entry.name.removeSuffix(".class").replace('/', '.'))
+            type.declaredMethods.filter {
+                Modifier.isStatic(it.modifiers) && Modifier.isPublic(it.modifiers) &&
+                    it.parameterCount == 0 && Patch::class.java.isAssignableFrom(it.returnType)
+            }.forEach { getter ->
+                val patch = getter.invoke(null) as Patch<*>
+                patch.name?.let { name -> exported[name] = patch }
+            }
+        }
+    }
+    check(exported.isNotEmpty()) { "No exported patch metadata was checked" }
+    for ((name, patch) in exported) {
+        @Suppress("DEPRECATION")
+        val packages = checkNotNull(patch.compatiblePackages) { "$name advertises all packages" }
+        check(packages.isNotEmpty())
+        for ((pkg, versions) in packages) {
+            check(!versions.isNullOrEmpty()) { "$name advertises every version of $pkg" }
+            check(versions == expected.getValue(pkg)) { "$name has stale supported versions for $pkg" }
+        }
+    }
+
+    val readme = File(root, "docs/versions/README.md")
+    val start = "<!-- supported-versions:start -->"
+    val end = "<!-- supported-versions:end -->"
+    val text = readme.readText()
+    val from = text.indexOf(start); val to = text.indexOf(end)
+    check(from >= 0 && to > from) { "Missing generated supported-version table markers" }
+    val table = buildString {
+        append(start).append("\n| アプリ | 対応versionName | versionCode | フック記録 |\n| --- | --- | --- | --- |\n")
+        for (profile in VersionHookRegistry.profiles) {
+            append("| ${profile.appName} | `${profile.versionName}` | ${profile.versionCode} | ")
+            append("[JSON](${profile.packageName}/${profile.versionName}.json) |\n")
+        }
+        append(end)
+    }
+    val updated = text.replaceRange(from, to + end.length, table)
+    if (write) readme.writeText(updated) else check(updated == text) {
+        "Stale supported-version table: run scripts/check-hook-profiles.sh --write"
+    }
+    println("Version profiles verified: exact versions/codes, unknown-version rejection, input hashes, JSON records; ${exported.size} Morphe patch declarations have exact version lists")
 }
 
 // Small JSON writer for the deliberately limited record types; no runtime dependencies.
