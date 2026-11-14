@@ -1,5 +1,9 @@
 # 引き継ぎメモ
 
+## 2026-11-14 報告者から初回診断ログ到着
+
+[Issue返信6865648676](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6865648676) の添付JSONを解析。Android12・Google17.72.17・Gemini1.0.995038376。11.388秒で警告文の自動検出あり、手動マーカーではない。一方、native processのqueueDroppedが1356に達しており、status/streamイベント無しからサーバー応答を除外できない。Stopの0件はUI processだけの値でglobal summaryではない。原Googleのinventoryキーも欠落しており、未インストールとは判断不可。詳細と次の解析手順は [diagnostics/reporter-log-2026-11-14.md](diagnostics/reporter-log-2026-11-14.md)。受領のお礼と調査中であることを短く返信し、追加質問はしていない。警告の原因特定・再現・修正には至っておらず、stable/診断版の新リリースはしていない。
+
 ## 2026-11-13 診断専用branch
 
 このbranchは公開v0.3.5から分離した `diagnostics/issue8-logs`。Issue #8の会話更新警告は未再現・原因未特定で、通常の修正リリースは保留。ユーザーの提案で、報告者が自分の署名・既存データを維持して適用できる診断MPPを追加した。手順は [docs/diagnostics.md](docs/diagnostics.md)、詳細な検証・観測の限界・次の解析は [diagnostics/README.md](diagnostics/README.md)。Google17.72.17.ve.arm64のみ対象。
