@@ -66,6 +66,28 @@ public final class UpdateCompatibilityProbe extends Instrumentation {
   target=getTargetContext();require(target.getPackageName().equals("com.google.android.googlequicksearchbox.morphe"));loader=target.getClassLoader();capture=loader.loadClass("app.geminipatch.diagnostics.Capture");reply=loader.loadClass("app.geminipatch.diagnostics.Capture$Reply");capture.getMethod("init",Context.class).invoke(null,target);
   String command=args.getString("command","unit");int mode=Integer.parseInt(args.getString("mode","0"));stage=command;
   if(command.equals("unit"))unit(result);
+  else if(command.equals("audit")){
+   action("start",null);unit(result);
+   // Exercise the safe failure event independently; do not alter native protobuf state.
+   capture.getMethod("historyUpdateCompatibility",int.class,int.class,int.class,int.class,boolean.class,boolean.class,boolean.class,boolean.class)
+    .invoke(null,1000000,4,5,99,true,true,true,true);
+   action("stop",null);File f=target.getFileStreamPath("geminipatch-update-audit-export.json");action("save",f);
+   ByteArrayOutputStream out=new ByteArrayOutputStream();try(InputStream in=new FileInputStream(f)){byte[] b=new byte[4096];int n;while((n=in.read(b))>=0)out.write(b,0,n);}
+   String raw=new String(out.toByteArray(),StandardCharsets.UTF_8);
+   require(!raw.contains("PRIVATE_CANARY")&&!raw.contains("SECRET_CONVERSATION_ID")&&!raw.contains("user@example.invalid")&&!raw.contains("https://"));
+   JSONObject report=new JSONObject(raw);require(report.getBoolean("syntheticTest")&&report.getLong("minimumObservedLoss")==0);
+   JSONArray events=report.getJSONArray("events");Set<String> outcomes=new HashSet<String>();int matched=0,removed=0,matchedCall=-1;
+   for(int i=0;i<events.length();i++){JSONObject e=events.getJSONObject(i);require(!e.getString("event").equals("observer_unavailable"));
+    if(!e.getString("event").equals("history_update_compatibility"))continue;
+    String outcome=e.getString("result");outcomes.add(outcome);
+    if(outcome.equals("matched")){matched++;matchedCall=e.getInt("call");require(e.getBoolean("originalPuntPresent")&&e.getBoolean("filteredPuntPresent"));}
+    if(outcome.equals("removed")){removed++;require(e.getInt("call")==matchedCall&&e.getBoolean("originalPuntPresent")&&!e.getBoolean("filteredPuntPresent"));}
+    if(outcome.equals("failed"))require(e.getString("stage").equals("validate")&&e.getInt("behavior")==-1);
+   }
+   require(matched==1&&removed==1&&outcomes.containsAll(Arrays.asList("no_punt","retained","matched","removed","failed")));
+   result.putBoolean("compatibilityOutcomesAndFailureStageCaptured",true);result.putBoolean("auditCanaryExcluded",true);
+   action("delete",null);require(f.delete());
+  }
   else if(command.equals("start")){require(mode==1||mode==2);try(OutputStream out=new FileOutputStream(target.getFileStreamPath("geminipatch-update-fixture-mode"))){out.write(mode);}action("start",null);result.putInt("syntheticMode",mode);}
   else if(command.equals("export"))export(mode,result);
   else if(command.equals("cleanup")){action("stop",null);action("delete",null);File control=target.getFileStreamPath("geminipatch-update-fixture-mode");require(!control.exists()||control.delete());File exported=target.getFileStreamPath("geminipatch-update-fixture-export.json");require(!exported.exists()||exported.delete());result.putBoolean("fixtureAndCaptureRemoved",true);}

@@ -22,7 +22,10 @@ fun main(args:Array<String>) {
                     check(versions==if(patch.name in setOf("Conversation diagnostics","Conversation update warning compatibility"))setOf("17.72.17.ve.arm64")else expected.getValue(pkg))
                 }
                 if(patch.name=="Conversation diagnostics")diagnostic=true
-                if(patch.name=="Conversation update warning compatibility")compatibility=true
+                if(patch.name=="Conversation update warning compatibility"){
+                    check(patch.default){"Warning compatibility must be selected by default"}
+                    compatibility=true
+                }
                 count++
             }
         }

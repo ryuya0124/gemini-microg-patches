@@ -346,6 +346,21 @@ public final class Capture {
         // Only safe flags and static locations participate in de-duplication.
         if (SEEN.add(key)) append(data, titleHit || bodyHit || source.equals("banner"));
     }
+    /** Fixed compatibility outcomes only; never retains a response, text or exception. */
+    public static void historyUpdateCompatibility(final int call, final int result, final int stage, final int behavior,
+            final boolean present, final boolean compared, final boolean title, final boolean body) {
+        if (!active || call <= 0 || result < 0 || result > 4 || stage < 1 || stage > 6) return;
+        observed("history_update_compatibility", new Runnable() { public void run() { try {
+            String[] outcomes = {"no_punt", "retained", "matched", "removed", "failed"};
+            String[] stages = {"schema", "match", "copy", "clear", "validate", "complete"};
+            String key = "compatibility:" + outcomes[result];
+            COUNTERS.put(key, COUNTERS.containsKey(key) ? COUNTERS.get(key) + 1 : 1);
+            append(event("history_update_compatibility").put("call", call).put("result", outcomes[result])
+                    .put("stage", stages[stage - 1]).put("behavior", behavior >= 0 && behavior <= 4 ? behavior : -1)
+                    .put("originalPuntPresent", present).put("filteredPuntPresent", result != 3 && present)
+                    .put("textCompared", compared).put("knownWarningTitle", title).put("knownWarningBody", body), true);
+        } catch (Throwable ignored) { problem("history_update_compatibility"); } }}, true, false);
+    }
     public static void stream(Object value) {
         if (!active) return;
         observed("stream", new Runnable() { public void run() { try { if (sample("stream")) append(event("incoming_stream").put("observedCount", COUNTERS.get("stream")), false); } catch (Throwable ignored) {} }}, true, true);

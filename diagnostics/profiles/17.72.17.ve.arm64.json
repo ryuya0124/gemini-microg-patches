@@ -2,7 +2,7 @@
   "packageName": "com.google.android.googlequicksearchbox",
   "versionName": "17.72.17.ve.arm64",
   "versionCode": "301831138",
-  "build": "0.3.6-preview.1",
+  "build": "0.3.6-preview.2",
   "historyUpdateReceiveMethod": "Latze;->a(Ljava/lang/Object;)V",
   "historyUpdateResponseType": "gffq",
   "historyUpdatePuntField": "d",

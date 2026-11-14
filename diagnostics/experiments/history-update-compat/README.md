@@ -1,6 +1,6 @@
 # Issue #8: targeted history-update warning compatibility candidate
 
-The selective compatibility helper copies the `ListConversationTurns` response and clears only the recognized English history-update punt, preserving the rest of the response. The backend reason for returning the warning remains unknown. The candidate is packaged as0.3.6-preview.1; the reporter's affected conversation remains unverified and no Issue reply has been posted.
+The selective compatibility helper copies the `ListConversationTurns` response and clears only the recognized English history-update punt, preserving the rest of the response. The backend reason for returning the warning remains unknown. The current candidate is0.3.6-preview.2; the reporter's affected conversation remains unverified.
 
 Owning preview profile: [17.72.17.ve.arm64.json](../../profiles/17.72.17.ve.arm64.json). Packaged core: [HistoryUpdateCompatibility.java](../../runtime/app/geminipatch/compat/HistoryUpdateCompatibility.java). Packaged receive hook: [HistoryUpdateCompatibilityPatch.kt](../../patches/HistoryUpdateCompatibilityPatch.kt). This directory retains the tested prototype and native instrumentation sources. Private Mac evidence: `/Users/ryuya/Documents/GeminiPatch/local/issue8/reporter-diagnostics3/update-compat/`.
 
@@ -36,4 +36,24 @@ Start from the version's original DEX, locate the `RobinService/ListConversation
 
 The shell files under `tests/` preserve the private Mac harness recipes and its explicit evidence paths. Stage their accompanying source files at those ignored paths before running them; they are not part of the distributed patch build. `scripts/build-diagnostics.sh` builds only the packaged runtime and patch sources.
 
-Issue replies require the user's review before posting. No reply about these new findings/candidate has been posted.
+## Preview2 compatibility audit
+
+Warning compatibility remains selected by default, and the build verifier rejects a bundle with it disabled by default. Capture remains opt-in. The compatibility callback records `history_update_compatibility` without retaining response objects or strings. These events are neither merged nor sampled; existing queue/file limits and loss accounting still apply.
+
+| Result | Meaning |
+| --- | --- |
+| `no_punt` | The history receive hook ran, with no present top-level punt |
+| `retained` | A different behavior, unmatched warning or bounded-text comparison was retained |
+| `matched` | The exact English warning matched, before copying the response |
+| `removed` | The selective copy passed validation and its punt is absent |
+| `failed` | The filter returned the original response; `stage` identifies schema/match/copy/clear/validate |
+
+Match and completion share a per-process local call number. This is not a conversation identifier. Bounded behavior, original/filtered presence and comparison booleans accompany each outcome. A match without completion is not evidence of success: inspect process acknowledgments/loss, downstream history/banner events and stream/status observations. `no_punt` proves the hook ran for that callback; it does not prove every response or send path was observed. No raw warning, conversation text, exception details or credentials are added.
+
+Native audit instrumentation exercises all five outcomes and pairs successful match/removal calls. The failure-event case is explicitly synthetic and tests only safe logging, not a naturally failing filter. Existing protobuf preservation and unrelated-warning controls run with it. See private `preview2-runtime` evidence for actual completed runs.
+
+The preview2 native audit suite passed, including unchanged original/turns/pagination/unknown fields, unrelated-warning controls and canary exclusion. The complete MPP generated an APK that passes the clone contract, existing parser/setter/register checks, signature and16KiB alignment. On authenticated Android12/API31 it loaded the owned Web-origin conversation and received fresh `WEB_PREVIEW_AUDIT_PLAIN_OK`. Its actual document-picker export has four acknowledged processes, loss0/incomplete=false and a `no_punt` compatibility event from the real receive hook, plus history and incoming-stream observations. This ordinary conversation has no naturally returned update warning; the match/removal path is established by the separate synthetic/native tests, not by this live run.
+
+Preview2 MPP SHA256: `339415d49c80573de911b32eaaaeb1f20d0bd7aef18269a8167ed93dd88e7a61`. Private evidence: main Mac `local/issue8/reporter-diagnostics3/preview2-runtime/`; generated APK build inventory: isolated Mac `local/verification/preview2-build/`. The wrapper restored the exact four ordinary APK sets, UIDs and matching stock/microG account pair. At boot the retained Gemini clone setting again had no queryable APK code; preflight reinstalled its exact five retained APKs, preserving UID/CE data inode, and verified the full baseline before this comparison. This was an emulator-preflight repair, not a compatibility patch result. Physical Galaxy was untouched. Actual Manager generation/install was completed for preview1; preview2 changes only runtime audit/reporting and verifies the default flag in the packaged patch inventory.
+
+Issue replies require user approval unless the current instruction explicitly authorizes the particular announcement.
