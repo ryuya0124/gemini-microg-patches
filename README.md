@@ -2,6 +2,8 @@
 
 > **Diagnostic branch:** opt-in capture for the unresolved conversation update warning. See [diagnostic instructions](docs/diagnostics.md). This is not a fix or a replacement for the stable source. [Development record](diagnostics/README.md).
 
+> **Experimental v0.3.7:** [download and update the installed Google (Morphe) app](docs/diagnostics.md#install-without-losing-the-affected-conversation). Adding the source in Morphe alone is not an app update. The installed diagnostics screen now shows **0.3.7**.
+
 > **試験機能:** 表示済みの本文・画像と任意の動画を、アプリ再起動後も端末内に保持できます。[使い方と保存上限](docs/displayed-replies.md)。Google `17.72.17.ve.arm64` 用の追加選択パッチです。
 
 microGを使い、通常領域とSamsungセキュアフォルダでGeminiを動かすためのMorpheパッチ集です。GoogleアプリとGeminiランチャーを別パッケージとして構築します。

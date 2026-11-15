@@ -5,7 +5,7 @@ import hashlib,json,re,sys,zipfile,shutil
 
 root=Path(__file__).resolve().parents[1]
 metadata=json.loads((root/'diagnostics/metadata.json').read_text())
-assert re.fullmatch(r'\d+\.\d+\.\d+-(?:diagnostics|preview)\.\d+',metadata['version'])
+assert re.fullmatch(r'\d+\.\d+\.\d+(?:-(?:diagnostics|preview)\.\d+)?',metadata['version'])
 profile=json.loads((root/'diagnostics/profiles'/metadata['profile']).read_text())
 assert profile['build']==metadata['version']
 out=Path(sys.argv[2]).resolve()
@@ -24,9 +24,10 @@ if mode=='schema':
         assert generated.is_relative_to(out) and generated!=out
         if generated.exists():shutil.rmtree(generated)
         generated.mkdir(parents=True)
-    lines=['package app.geminipatch.diagnostics;','import java.util.*;','final class Schema {']
+    lines=['package app.geminipatch.diagnostics;','import java.util.*;','public final class Schema {']
+    lines.append('public static final String PROFILE_SHA256 = '+quote(hashlib.sha256((root/'diagnostics/profiles'/metadata['profile']).read_bytes()).hexdigest())+';')
     for key,value in [('BUILD',profile['build']),('VERSION',profile['versionName']),('STATUS',profile['statusType']),('ERROR_ENUM',profile['errorEnum']),('CAPABILITIES',profile['capabilitiesType']),('PUNT',profile['puntType']),('PUNT_TITLE',profile['puntTitleField']),('PUNT_BODY',profile['puntBodyField']),('PUNT_BEHAVIOR',profile['puntBehaviorField'])]:
-        lines.append('static final String '+key+' = '+quote(value)+';')
+        lines.append(('public ' if key=='BUILD' else '')+'static final String '+key+' = '+quote(value)+';')
     lines.append('static final long CODE = '+profile['versionCode']+'L;')
     lines.append('static final Map<String,String> ROOTS; static { Map<String,String> m=new HashMap<String,String>();')
     for k,v in profile['incomingTypes'].items():lines.append('m.put('+quote(k)+','+quote(v)+');')

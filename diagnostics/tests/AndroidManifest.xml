@@ -2,4 +2,6 @@
   <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="36" />
   <application android:label="Gemini diagnostics emulator probe" />
   <instrumentation android:name="app.geminipatch.diagnosticstest.NativeCaptureProbe" android:targetPackage="com.google.android.googlequicksearchbox.morphe" />
+  <instrumentation android:name="app.geminipatch.diagnosticstest.BuildIdentityProbe" android:targetPackage="com.google.android.googlequicksearchbox.morphe" />
+  <instrumentation android:name="app.geminipatch.updatecompattest.UpdateCompatibilityProbe" android:targetPackage="com.google.android.googlequicksearchbox.morphe" />
 </manifest>

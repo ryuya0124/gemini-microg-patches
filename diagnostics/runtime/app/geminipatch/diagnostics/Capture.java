@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /** Opt-in, local-only observer. Never serializes user text into the report. */
 public final class Capture {
@@ -31,6 +32,7 @@ public final class Capture {
     // FIFO preserves per-process ordering; admission is fair between observation kinds.
     private static final LinkedBlockingDeque<Runnable> TASKS = new LinkedBlockingDeque<Runnable>();
     private static final AtomicInteger DROPPED = new AtomicInteger();
+    private static final AtomicIntegerArray COMPATIBILITY_CALLS = new AtomicIntegerArray(2);
     private static final ThreadLocal<Long> OBSERVED_AT = new ThreadLocal<Long>();
     private static final CaptureInbox INBOX = new CaptureInbox(new CaptureInbox.Dispatch() {
         public void post(Runnable r) { TASKS.offerLast(r); }
@@ -46,10 +48,12 @@ public final class Capture {
     private static volatile String state = "Capture is off.";
     private static Thread worker;
     private static volatile long started;
+    private static volatile String captureBuild="unavailable";
     private static volatile long localStopRequest;
     private static long until, refreshed;
     private static long stoppedAt, summaryRevision = -1, summaryStoppedAt = -1;
     private static int summaryDropped = -1;
+    private static int summaryHistory=-1,summaryStream=-1;
     private static boolean synthetic;
     private static final int NORMAL_LIMIT = 192 * 1024, HARD_LIMIT = 256 * 1024;
     private static final long DURATION = 15 * 60 * 1000;
@@ -82,7 +86,11 @@ public final class Capture {
     private static void reply(final Reply r, final boolean ok, final String message) {
         if (r != null) MAIN.post(new Runnable() { public void run() { r.done(ok, message); }});
     }
-    public static String state() { return state; }
+    public static String build() { return Schema.BUILD; }
+    public static String reportFileName() { return "GeminiPatch-diagnostics-"+Schema.BUILD+"-"+System.currentTimeMillis()+".json"; }
+    public static String state() { return "Installed diagnostics: "+Schema.BUILD+"\n"+(started>0?"Capture build: "+captureBuild+"\n":"")+state+(started>0&&!captureBuild.equals(Schema.BUILD)?"\nThis capture predates this diagnostic build. Start a new capture.":""); }
+    public static void compatibilityEntered(int source) { if(source>=0&&source<2)COMPATIBILITY_CALLS.incrementAndGet(source); }
+    public static JSONObject identity() throws Exception { return BuildAudit.snapshot(context,COMPATIBILITY_CALLS.get(0),COMPATIBILITY_CALLS.get(1)); }
     public static boolean active() { return active; }
     private static File file(String name) { return new File(folder, name); }
     private static JSONObject read(File f) throws Exception {
@@ -107,23 +115,26 @@ public final class Capture {
             summaryRevision = summaryStoppedAt = -1; summaryDropped = -1;
         }
         until = control.optLong("until", 0); stoppedAt = control.optLong("stoppedAt", 0); synthetic = control.optBoolean("synthetic", false);
+        captureBuild=BuildAudit.version(control.optString("captureBuild"));
         active = started > 0 && localStopRequest == 0 && System.currentTimeMillis() < until;
         state = active ? "Recording technical diagnostics (up to 15 minutes)." : (started > 0 ? "Capture stopped. You can save the report." : "Capture is off.");
     }
     private static void checkpoint(boolean force) throws Exception {
         if (started <= 0 || folder == null) return;
         long revision = INBOX.revision(); int dropped = DROPPED.get();
-        if (!force && revision == summaryRevision && dropped == summaryDropped && stoppedAt == summaryStoppedAt) return;
+        int history=COMPATIBILITY_CALLS.get(0),stream=COMPATIBILITY_CALLS.get(1);
+        if (!force && revision == summaryRevision && dropped == summaryDropped && stoppedAt == summaryStoppedAt&&history==summaryHistory&&stream==summaryStream) return;
         JSONObject summary = new JSONObject().put("process", Process.myPid()).put("generation", started)
                 .put("pending", INBOX.pending()).put("stopAcknowledged", stoppedAt > 0 && INBOX.pending() == 0)
                 .put("observerLost", INBOX.lost() + dropped).put("otherDropped", dropped)
-                .put("admission", new JSONObject(INBOX.counters())).put("processedCounters", new JSONObject(COUNTERS));
+                .put("admission", new JSONObject(INBOX.counters())).put("processedCounters", new JSONObject(COUNTERS)).put("identity",identity());
         folder.mkdirs();
         try (RandomAccessFile l = new RandomAccessFile(file("capture.lock"), "rw"); FileChannel ch = l.getChannel(); FileLock lock = ch.lock()) {
             if (read(file("control.json")).optLong("started") != started) return;
             write(file("process-" + Process.myPid() + ".json"), summary);
         }
         summaryRevision = revision; summaryDropped = dropped; summaryStoppedAt = stoppedAt;
+        summaryHistory=history;summaryStream=stream;
     }
     private static JSONArray processSummaries(long generation) throws Exception {
         JSONArray records = new JSONArray(); File[] files = folder.listFiles(); if (files == null) return records;
@@ -183,7 +194,7 @@ public final class Capture {
                 folder.mkdirs();
                 try (RandomAccessFile l = new RandomAccessFile(file("capture.lock"), "rw"); FileChannel ch = l.getChannel(); FileLock lock = ch.lock()) {
                     long now = System.currentTimeMillis();
-                    JSONObject control = new JSONObject().put("started", now).put("until", now + DURATION).put("synthetic", test);
+                    JSONObject control = new JSONObject().put("started", now).put("until", now + DURATION).put("synthetic", test).put("captureBuild",Schema.BUILD);
                     write(file("control.json"), control);
                     try (OutputStream clear = new FileOutputStream(file("events.jsonl"))) { /* New opt-in capture replaces the previous report. */ }
                     File[] old = folder.listFiles(); if (old != null) for (File f : old)
@@ -208,8 +219,8 @@ public final class Capture {
                     } catch (Throwable ignored) { v.put("present", false); }
                     versions.put(pkg, v);
                 }
-                header.put("relevantPackages", versions); append(header, true);
-                reply(callback, true, "Capture started. Open the affected chat, then return here and save the report.");
+                header.put("relevantPackages", versions).put("identity",identity()); append(header, true);
+                reply(callback, true, "Capture started ("+Schema.BUILD+"). Open the affected chat, then return here and save the report.");
             } catch (Throwable ignored) { reply(callback, false, "Could not start capture. Try again."); }
         }}, true);
     }
@@ -257,11 +268,12 @@ public final class Capture {
                 folder.mkdirs();
                 checkpoint(true);
                 if (stoppedAt > 0) awaitProcesses();
-                JSONObject report = new JSONObject().put("schema", 2).put("build", Schema.BUILD);
+                JSONObject report = new JSONObject().put("schema", 2).put("build", Schema.BUILD).put("exporterIdentity",identity()).put("exportedAtMs",System.currentTimeMillis());
                 JSONArray events = new JSONArray();
                 try (RandomAccessFile l = new RandomAccessFile(file("capture.lock"), "rw"); FileChannel ch = l.getChannel(); FileLock lock = ch.lock()) {
                     JSONObject control = read(file("control.json")); report.put("syntheticTest", control.optBoolean("synthetic", false));
                     report.put("capturePresent", control.optLong("started", 0) > 0);
+                    report.put("captureBuild",BuildAudit.version(control.optString("captureBuild"))).put("captureStartedAtMs",control.optLong("started",0));
                     JSONArray processes = processSummaries(control.optLong("started"));
                     long lost = 0; for (int i = 0; i < processes.length(); i++) lost += processes.getJSONObject(i).optLong("observerLost");
                     boolean complete = control.has("stoppedAt") && acknowledged(processes);
@@ -279,11 +291,11 @@ public final class Capture {
                     if (registered.add(pid)) processes.put(new JSONObject().put("process", pid).put("summaryMissing", true).put("stopAcknowledged", false));
                 }
                 if (!acknowledged(processes)) report.put("allStoppedProcessesAcknowledged", false).put("incomplete", true);
-                report.put("events", events);
+                report.put("events", events).put("buildIdentity",BuildAudit.evaluate(report,events));
                 try (OutputStream o = context.getContentResolver().openOutputStream(destination, "wt")) {
                     if (o == null) throw new IOException(); o.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
                 }
-                reply(callback, true, "Report saved. Nothing was uploaded automatically.");
+                reply(callback, true, "Report saved ("+Schema.BUILD+"). Nothing was uploaded automatically."+(report.getJSONObject("buildIdentity").optString("state").equals("consistent")?"":"\nThe capture identity is incomplete or older. Start a new capture before reproducing the warning."));
             } catch (Throwable ignored) { reply(callback, false, "Could not save the report. Try another location."); }
         }}, true);
     }

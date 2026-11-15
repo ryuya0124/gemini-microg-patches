@@ -1,17 +1,30 @@
 package app.morphe.patches.google.diagnostics
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patches.google.common.VersionHookRegistry
 import java.util.Properties
 
 private object HistoryCompatibilityPayload
+private val compatibilityIdentity=resourcePatch {
+ dependsOn(conversationDiagnosticsPatch)
+ execute {
+  val profile=Properties().apply{checkNotNull(HistoryCompatibilityPayload::class.java.getResourceAsStream("/diagnostics/profile.properties")).use{load(it)}}
+  document("AndroidManifest.xml").use{doc->
+   val app=doc.getElementsByTagName("application").item(0)
+   check((0 until app.childNodes.length).none{val n=app.childNodes.item(it);n is org.w3c.dom.Element&&n.tagName=="meta-data"&&n.getAttribute("android:name")=="app.geminipatch.conversation_update_compatibility"})
+   val marker=doc.createElement("meta-data");marker.setAttribute("android:name","app.geminipatch.conversation_update_compatibility")
+   marker.setAttribute("android:value",checkNotNull(profile.getProperty("build")));app.appendChild(marker)
+  }
+ }
+}
 val historyUpdateCompatibilityPatch=bytecodePatch(
  name="Conversation update warning compatibility",
  description="Ignores the recognized conversation update warning while keeping chat history. Experimental.",
  default=true
 ){
  compatibleWith("com.google.android.googlequicksearchbox"("17.72.17.ve.arm64"))
- dependsOn(conversationDiagnosticsPatch)
+ dependsOn(conversationDiagnosticsPatch,compatibilityIdentity)
  execute{
   VersionHookRegistry.requireProfile(packageMetadata)
   val profile=Properties().apply{checkNotNull(HistoryCompatibilityPayload::class.java.getResourceAsStream("/diagnostics/profile.properties")).use{load(it)}}

@@ -8,15 +8,20 @@ import android.util.Log;
 /** Exact Google17.72.17 prototype: remove only the recognized thread-update punt. */
 public final class HistoryUpdateCompatibility {
  private static final AtomicInteger CALLS=new AtomicInteger();
+ public static String buildIdentity(){return app.geminipatch.diagnostics.Schema.BUILD;}
+ public static String profileIdentity(){return app.geminipatch.diagnostics.Schema.PROFILE_SHA256;}
+ private static void entered(int source){try{app.geminipatch.diagnostics.Capture.compatibilityEntered(source);}catch(Throwable ignored){}}
  private static void audit(ClassLoader loader,int source,int call,int result,int stage,int behavior,boolean present,boolean compared,boolean title,boolean body){
   try{loader.loadClass("app.geminipatch.diagnostics.Capture").getMethod("updateCompatibility",int.class,int.class,int.class,int.class,int.class,boolean.class,boolean.class,boolean.class,boolean.class)
    .invoke(null,source,call,result,stage,behavior,present,compared,title,body);}catch(Throwable ignored){}
  }
  public static Object filter(Object original){
+  entered(0);
   if(original==null||!original.getClass().getName().equals("gffq"))return original;
   return filterPunt(original,"d",1,0);
  }
  public static Object filterStream(Object original){
+  entered(1);
   if(original==null||!original.getClass().getName().equals("gfeh"))return original;
   try{
    Object value=original;boolean present=false;Class<?> type=original.getClass();

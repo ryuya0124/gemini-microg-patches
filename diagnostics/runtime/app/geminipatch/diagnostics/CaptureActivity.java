@@ -22,10 +22,10 @@ public final class CaptureActivity extends Activity {
         if (!isFinishing()) new AlertDialog.Builder(CaptureActivity.this).setMessage(message).setPositiveButton("OK", null).show();
     }};
     @Override public void onCreate(Bundle saved) {
-        super.onCreate(saved); Capture.init(this); setTitle("Gemini diagnostics");
+        super.onCreate(saved); Capture.init(this); setTitle("Gemini diagnostics "+Capture.build());
         LinearLayout column = new LinearLayout(this); column.setOrientation(LinearLayout.VERTICAL);
         int pad = (int) (20 * getResources().getDisplayMetrics().density); column.setPadding(pad, pad, pad, pad);
-        TextView title = new TextView(this); title.setText("Gemini diagnostics"); title.setTextSize(24); column.addView(title);
+        TextView title = new TextView(this); title.setText("Gemini diagnostics "+Capture.build()); title.setTextSize(24); column.addView(title);
         TextView info = new TextView(this);
         info.setText("Records technical app versions, feature flags, response/error codes, app code/view identifiers and whether the update-warning text was detected.\n\nChat text, email addresses, conversation IDs, credentials and URLs are not saved. Nothing is uploaded automatically.\n\nStart capture, open the affected chat, then return here and save the JSON report. Recording stops after 15 minutes. Starting again replaces the previous report.");
         info.setTextSize(16); info.setPadding(0, pad, 0, pad); column.addView(info);
@@ -44,7 +44,7 @@ public final class CaptureActivity extends Activity {
         }});
         button(column, "Stop capture", new android.view.View.OnClickListener() { public void onClick(android.view.View v) { Capture.stop(CaptureActivity.this, reply); }});
         button(column, "Save report", new android.view.View.OnClickListener() { public void onClick(android.view.View v) {
-            Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, "GeminiPatch-diagnostics.json");
+            Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("application/json").addCategory(Intent.CATEGORY_OPENABLE).putExtra(Intent.EXTRA_TITLE, Capture.reportFileName());
             try { startActivityForResult(i, SAVE); } catch (Throwable ignored) { reply.done(false, "Android's document picker is unavailable."); }
         }});
         button(column, "Delete report", new android.view.View.OnClickListener() { public void onClick(android.view.View v) {

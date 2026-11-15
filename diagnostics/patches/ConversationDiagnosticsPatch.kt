@@ -46,7 +46,7 @@ private val diagnosticsScreen = resourcePatch {
             activity.setAttribute("android:exported", "true")
             activity.setAttribute("android:taskAffinity", "app.geminipatch.diagnostics")
             activity.setAttribute("android:launchMode", "singleTask")
-            activity.setAttribute("android:label", "Gemini diagnostics")
+            activity.setAttribute("android:label", "Gemini diagnostics ${value("build")}")
             activity.setAttribute("android:icon", "@android:drawable/ic_menu_info_details")
             activity.setAttribute("android:theme", "@android:style/Theme.Material.Light.NoActionBar")
             val filter = doc.createElement("intent-filter")

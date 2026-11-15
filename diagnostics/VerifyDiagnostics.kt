@@ -6,6 +6,9 @@ import com.android.tools.smali.dexlib2.Opcodes
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
 import com.android.tools.smali.dexlib2.iface.value.StringEncodedValue
 import java.util.Properties
+import java.security.MessageDigest
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
 
 fun main(args:Array<String>) {
     val expected=VersionHookRegistry.profiles.groupBy{it.packageName}.mapValues{(_,v)->v.map{it.versionName}.toSet()}
@@ -49,6 +52,14 @@ fun main(args:Array<String>) {
         val schema=runtime.single{it.type=="Lapp/geminipatch/diagnostics/Schema;"}
         val embedded=(schema.fields.single{it.name=="BUILD"}.initialValue as StringEncodedValue).value
         check(embedded==version&&properties.getProperty("build")==version){"Runtime/profile build does not match manifest"}
+        val profileHash=MessageDigest.getInstance("SHA-256").digest(jar.getInputStream(jar.getJarEntry("diagnostics/profile.json")).readBytes()).joinToString(""){"%02x".format(it.toInt() and 255)}
+        check((schema.fields.single{it.name=="PROFILE_SHA256"}.initialValue as StringEncodedValue).value==profileHash)
+        val literalBuilds=runtime.filter{it.type.startsWith("Lapp/geminipatch/diagnostics/Capture")}.flatMap{it.methods.toList()}.map{m->m.implementation?.instructions?.mapNotNull{((it as? ReferenceInstruction)?.reference as? StringReference)?.string}?.filter{it.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+(?:-(?:preview|diagnostics)\\.[0-9]+)?"))}?.toSet()?:emptySet()}
+        check(literalBuilds.count{version in it}>=2){"Capture/export executable build literals missing"}
+        check(literalBuilds.flatten().all{it==version||it=="0.3.5"}){"Stale inlined capture build literal"}
+        val helper=runtime.single{it.type=="Lapp/geminipatch/compat/HistoryUpdateCompatibility;"}
+        fun strings(method:String)=helper.methods.single{it.name==method}.implementation!!.instructions.mapNotNull{((it as? ReferenceInstruction)?.reference as? StringReference)?.string}.toSet()
+        check(version in strings("buildIdentity")&&profileHash in strings("profileIdentity"))
         if(properties.getProperty("streamUpdateReceiveMethod")!=null){
             check(runtime.single{it.type=="Lapp/geminipatch/compat/HistoryUpdateCompatibility;"}.methods.any{it.name=="filterStream"})
         }

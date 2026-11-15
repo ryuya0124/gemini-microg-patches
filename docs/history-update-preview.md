@@ -6,9 +6,10 @@ The compatibility patch supports **original Google17.72.17.ve.arm64 /301831138 o
 
 ## Install while keeping your data
 
-1. Import the supplied `gemini-microg-patches-0.3.6-preview.3.mpp` locally in Morphe Manager. Check that the source version is0.3.6-preview.3.
+1. Import the supplied `gemini-microg-patches-0.3.7.mpp` locally in Morphe Manager. Check that the source version is0.3.7.
 2. Select the **original, unpatched Google17.72.17 APK**. Keep the source defaults, including **Conversation update warning compatibility** and **Conversation diagnostics**, plus your previous update-blocking choice.
 3. Build and install as an update with the **same Morphe signing key**. If Android rejects it, stop; do not uninstall, clear app data or reset microG.
+   Importing the MPP is only the first step: **install the newly generated Google (Morphe) APK over the installed app**. Open **Gemini diagnostics 0.3.7** and verify **Installed diagnostics: 0.3.7** before recording. Disable older GeminiPatch sources during this build.
 4. Open the affected existing conversation and try sending a short message. A warning disappearing is separate from receiving a reply.
 
 The included optional diagnostics screen can record what happens using the [capture steps](diagnostics.md#record-the-warning). Capture stays off until you start it; nothing uploads automatically. If the warning disappears but a message still fails, keep that report as evidence of the remaining problem. Do not post account credentials or raw logcat.
