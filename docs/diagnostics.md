@@ -23,6 +23,8 @@ Capture is off until you start it and stops after 15 minutes. Starting a new cap
 
 ## What the report contains
 
+For analysis, check the report's own `build` and the capture-start build against the version being evaluated before attributing a result to that version. A source version shown in Morphe or a reply label alone does not identify the exported capture. Maintainers can use `scripts/check-diagnostic-report.py REPORT --expected-build 0.3.6-preview.3`; it summarizes safe fields and rejects mismatched builds without printing report contents. Keep unmatched exports as evidence and obtain a fresh capture from the intended installed build.
+
 It contains relevant Google/Gemini package versions, Android API level, numeric capability IDs, client version strings, parsed response-schema counters, structured error codes and booleans indicating whether known warning text was detected. Fixed app code/view identifiers help locate the warning. Warning submessage presence, behavior enums and known-warning booleans distinguish history loading, generated replies and the native banner. Process numbers, elapsed milliseconds and per-process capture summaries help correlate events and expose missing observations.
 
 Preview2 also records each history compatibility outcome: no punt, retained, matched, removed or failed. Match/removal events share a local per-process call number. The report includes a fixed failure stage, bounded behavior enum, text-comparison flags and before/after punt presence. These observations are not merged or sampled; queue/file limits still count losses in the report. Capture must be started before opening the affected chat. Warning compatibility is selected by default in Morphe.

@@ -4,6 +4,8 @@ import java.lang.reflect.Modifier
 import java.util.jar.JarFile
 import com.android.tools.smali.dexlib2.Opcodes
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
+import com.android.tools.smali.dexlib2.iface.value.StringEncodedValue
+import java.util.Properties
 
 fun main(args:Array<String>) {
     val expected=VersionHookRegistry.profiles.groupBy{it.packageName}.mapValues{(_,v)->v.map{it.versionName}.toSet()}
@@ -31,11 +33,21 @@ fun main(args:Array<String>) {
         }
         check(diagnostic&&compatibility&&count==18) { "Expected the 16 base patches plus diagnostics and compatibility, got $count" }
         val payload=checkNotNull(jar.getJarEntry("extensions/conversation-diagnostics.bin"))
-        val types=jar.getInputStream(payload).buffered().use{DexBackedDexFile.fromInputStream(Opcodes.getDefault(),it).classes.map{c->c.type}.toSet()}
+        val runtime=jar.getInputStream(payload).buffered().use{DexBackedDexFile.fromInputStream(Opcodes.getDefault(),it).classes.toList()}
+        val types=runtime.map{it.type}.toSet()
         check(setOf("Lapp/geminipatch/diagnostics/Capture;","Lapp/geminipatch/diagnostics/CaptureActivity;","Lapp/geminipatch/diagnostics/Schema;").all{it in types})
         check("Lapp/geminipatch/compat/HistoryUpdateCompatibility;" in types)
         check(types.none{it.contains("UpdateFixture")||it.contains("CapabilitySubsetProbe")||it.contains("UpdateCompatibilityProbe")})
         check(jar.getJarEntry("diagnostics/profile.json")!=null)
+        val properties=Properties().apply{jar.getInputStream(checkNotNull(jar.getJarEntry("diagnostics/profile.properties"))).use{load(it)}}
+        val version=checkNotNull(jar.manifest.mainAttributes.getValue("Version"))
+        val schema=runtime.single{it.type=="Lapp/geminipatch/diagnostics/Schema;"}
+        val embedded=(schema.fields.single{it.name=="BUILD"}.initialValue as StringEncodedValue).value
+        check(embedded==version&&properties.getProperty("build")==version){"Runtime/profile build does not match manifest"}
+        if(properties.getProperty("streamUpdateReceiveMethod")!=null){
+            check(runtime.single{it.type=="Lapp/geminipatch/compat/HistoryUpdateCompatibility;"}.methods.any{it.name=="filterStream"})
+        }
+        println("Embedded diagnostic build verified: $embedded")
     }
     println("Preview inventory verified: 18 named patches, exact versions, core compatibility and no test fixtures")
 }
