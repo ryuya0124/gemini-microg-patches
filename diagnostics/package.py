@@ -8,6 +8,7 @@ metadata=json.loads((root/'diagnostics/metadata.json').read_text())
 assert re.fullmatch(r'\d+\.\d+\.\d+(?:-(?:diagnostics|preview)\.\d+)?',metadata['version'])
 profile=json.loads((root/'diagnostics/profiles'/metadata['profile']).read_text())
 assert profile['build']==metadata['version']
+profile_bytes=(json.dumps(profile,indent=2,ensure_ascii=True)+'\n').encode('utf-8')
 out=Path(sys.argv[2]).resolve()
 assert out==root/'build/diagnostics'
 mode=sys.argv[1]
@@ -25,7 +26,7 @@ if mode=='schema':
         if generated.exists():shutil.rmtree(generated)
         generated.mkdir(parents=True)
     lines=['package app.geminipatch.diagnostics;','import java.util.*;','public final class Schema {']
-    lines.append('public static final String PROFILE_SHA256 = '+quote(hashlib.sha256((root/'diagnostics/profiles'/metadata['profile']).read_bytes()).hexdigest())+';')
+    lines.append('public static final String PROFILE_SHA256 = '+quote(hashlib.sha256(profile_bytes).hexdigest())+';')
     for key,value in [('BUILD',profile['build']),('VERSION',profile['versionName']),('STATUS',profile['statusType']),('ERROR_ENUM',profile['errorEnum']),('CAPABILITIES',profile['capabilitiesType']),('PUNT',profile['puntType']),('PUNT_TITLE',profile['puntTitleField']),('PUNT_BODY',profile['puntBodyField']),('PUNT_BEHAVIOR',profile['puntBehaviorField'])]:
         lines.append(('public ' if key=='BUILD' else '')+'static final String '+key+' = '+quote(value)+';')
     lines.append('static final long CODE = '+profile['versionCode']+'L;')
@@ -36,7 +37,7 @@ if mode=='schema':
     for k,v in profile['puntFields'].items():lines.append('m.put('+quote(k)+','+quote(v)+');')
     lines.extend(['PUNT_FIELDS=Collections.unmodifiableMap(m);','}','}'])
     (out/'runtime/Schema.java').write_text('\n'.join(lines)+'\n')
-    (out/'resources/diagnostics/profile.json').write_bytes((root/'diagnostics/profiles'/metadata['profile']).read_bytes())
+    (out/'resources/diagnostics/profile.json').write_bytes(profile_bytes)
     # Use only the Java standard library in Android Manager's external patch host.
     # JSON remains the owning profile; this derived resource has no new runtime dependency.
     properties={k:v for k,v in profile.items() if isinstance(v,str)}

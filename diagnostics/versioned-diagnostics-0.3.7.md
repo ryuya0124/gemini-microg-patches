@@ -13,6 +13,8 @@ Prepared after reporter6892191127 supplied another internally preview2 capture. 
 
 `VerifyDiagnostics.kt` checks the MPP version, generated profile, profile fingerprint and executable/inlined capture/export/helper identities. This prevents a newly labeled MPP from containing an older capture/export build literal. `scripts/check-diagnostic-report.py REPORT --expected-build 0.3.7` independently checks the exporter/process runtime and fingerprint fields; exit2 means build/header mismatch, exit3 means current build with incomplete/mismatched identities. Exit0 is identity agreement, not proof of a fix or complete capture.
 
+The bundled profile serialization is normalized before hashing and packaging, so Windows CRLF and Unix LF inputs produce the same fingerprint/runtime payload. The initial cross-platform artifact comparison caught this difference before publication; the corrected package was rebuilt and all three emulator probes rerun before acceptance.
+
 The API31 instrumentation manifest now also exposes a private `BuildIdentityProbe` and the existing selective-copy `UpdateCompatibilityProbe`. Build using `scripts/build-diagnostic-probes.sh` with the same private signing key as the target. Test APKs and test-only classes are excluded from the MPP. Use only a dedicated account-free emulator, back up its prior APKs and restore them after testing. Never uninstall or reset a reporter's app to run this procedure.
 
 ## Release isolation
