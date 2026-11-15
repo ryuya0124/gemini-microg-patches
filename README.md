@@ -28,6 +28,8 @@ Issue #8 reproduction and the verified fix are recorded in [the emulator regress
 
 [Morpheにソースを追加](https://morphe.software/add-source?github=ryuya0124/gemini-microg-patches)、またはSources → RemoteにこのリポジトリのURLを入力してください。更新情報はルートの `patches-bundle.json` で配信します。
 
+このリモート更新先は安定版用です。試験版0.3.7は自動取得されないため、[手順](docs/diagnostics.md)に従ってMPPをダウンロードし、ローカルソースを置き換えてAPKを生成・上書きインストールしてください。
+
 v0.3.2からは、このソースの**標準選択のまま**パッチしてください。`Automatic Clone Setup` が `.morphe` へのクローン化と権限・Providerの競合回避を行うため、公式Clone appやExpert modeでの手動設定は不要です。Googleはリソース入りのnodpi単体APKが扱いやすく、分割版では適合するresource splitも必要です。対応バリアントは[セットアップ手順](docs/setup-en.md)を参照してください。
 
 ## できること

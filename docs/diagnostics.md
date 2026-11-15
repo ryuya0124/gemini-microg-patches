@@ -6,10 +6,14 @@ This experimental preview includes a targeted compatibility change and optional 
 
 The diagnostic patch supports **Google `17.72.17.ve.arm64` (301831138) only**. Keep your existing original APK versions, Gemini installation, Morphe signing key and update-blocking settings. Do not switch app versions for this capture.
 
+**The normal repository update source still serves stable0.3.5. Checking source updates alone does not fetch experimental0.3.7.** Download the0.3.7 MPP below and replace your local GeminiPatch source explicitly.
+
 1. Download the `.mpp` from [the diagnostic prerelease](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.7).
 2. In Morphe Manager, open Sources → Add → Select patch source files and import it locally. Select **0.3.7** for this build and disable older GeminiPatch sources. Importing the MPP alone does **not** update the installed Google app.
+   If you already have a local **Gemini microG patches** source, expand its card and tap its **Update** action, then select the downloaded0.3.7 MPP. The source card must change to **0.3.7**. This file-selection update differs from checking remote source updates.
 3. Select the **original, unpatched** Google APK above. Keep this source's default selection, including **Conversation diagnostics**, and your existing optional update-blocking selection. Gemini does not need repatching for this capture.
 4. Finish patching, then **install the generated Google (Morphe) APK over your existing Google (Morphe) app**, using the same Morphe signing key. Open **Gemini diagnostics 0.3.7** in the same Android profile and check that its screen says **Installed diagnostics: 0.3.7**. This confirms the app update took effect. **If Android rejects the update, stop. Do not uninstall, clear data, reset microG or replace the signing key.** Those actions can lose the state needed to investigate the warning.
+   The completed patching screen should list **Source: Gemini microG patches0.3.7**. Tap **Install**, complete Android's **Update** confirmation and wait for **Installed** before opening diagnostics. If Android asks to allow installations from Morphe, complete that permission step and return to finish the installation; opening that settings page alone does not install the APK.
 
 ## Record the warning
 
