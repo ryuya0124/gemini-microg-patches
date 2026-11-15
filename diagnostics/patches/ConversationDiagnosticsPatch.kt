@@ -84,7 +84,7 @@ val conversationDiagnosticsPatch = bytecodePatch(
         val rootCounts = mutableMapOf<String, Int>()
         val activity = value("activity")
         classDefForEach { cls ->
-            if (cls.type.startsWith("Lapp/geminipatch/diagnostics/")) return@classDefForEach
+            if (cls.type.startsWith("Lapp/geminipatch/diagnostics/") || cls.type.startsWith("Lapp/geminipatch/retention/")) return@classDefForEach
             val targets = cls.methods.filter { m -> m.implementation != null && (
                 id(m) in methods.values || cls.type == activity && m.name == "onCreate" && m.parameterTypes == listOf("Landroid/os/Bundle;") ||
                     m.implementation!!.instructions.any { ins ->

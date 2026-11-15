@@ -1,0 +1,40 @@
+{
+  "fixtureSha256": "fe75aea8c01544f5cfd55461e42e889e435b8968b690bc59245f1c660fc664f4",
+  "probeSha256": "4697c082ed7b4d1710ed224bd4f8969418ad59aeed3bf590cb2bdaf4b62ef590",
+  "phases": {
+    "setup": {
+      "archiveFilesContainCiphertextOnly": "true",
+      "ciphertextTamperRejected": "true",
+      "encryptedVideoDecodedWithoutPlaintextTempFile": "true",
+      "phase": "setup",
+      "redImageAndCompleteVideoRetained": "true",
+      "result": "PASS",
+      "savedImageDisplayedAfterRemoval": "true",
+      "textAndMediaSurviveNativeViewRemoval": "true",
+      "userHiddenAndProgressExcluded": "true",
+      "videoNetworkSavingOptIn": "true"
+    },
+    "reload": {
+      "archiveFilesContainCiphertextOnly": "true",
+      "cancelDoesNotReopenDelayedViewer": "true",
+      "encryptedVideoDecodedWithoutPlaintextTempFile": "true",
+      "manualClearRemovesEncryptedTextAndMedia": "true",
+      "phase": "reload",
+      "queuedMediaCannotReappearAfterClear": "true",
+      "redImageAndCompleteVideoRetained": "true",
+      "result": "PASS",
+      "savedImageDisplayedAfterRemoval": "true",
+      "textImageAndVideoRestoredAfterProcessRestart": "true"
+    },
+    "cleared": {
+      "clearAndPausePersistAcrossRestart": "true",
+      "phase": "cleared",
+      "result": "PASS"
+    },
+    "native": {
+      "nativeMainActivityHasArchiveViewer": "true",
+      "phase": "native",
+      "result": "PASS"
+    }
+  }
+}

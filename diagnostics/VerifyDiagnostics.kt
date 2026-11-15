@@ -9,7 +9,7 @@ import java.util.Properties
 
 fun main(args:Array<String>) {
     val expected=VersionHookRegistry.profiles.groupBy{it.packageName}.mapValues{(_,v)->v.map{it.versionName}.toSet()}
-    var count=0;var diagnostic=false;var compatibility=false
+    var count=0;var diagnostic=false;var compatibility=false;var retention=false
     JarFile(args[0]).use { jar ->
         jar.entries().asSequence().filter{it.name.endsWith("Kt.class")}.forEach { entry ->
             val cls=VersionHookRegistry::class.java.classLoader.loadClass(entry.name.removeSuffix(".class").replace('/','.'))
@@ -21,9 +21,10 @@ fun main(args:Array<String>) {
                 check(packages.isNotEmpty())
                 for((pkg,versions)in packages) {
                     check(!versions.isNullOrEmpty()) { "${patch.name} claims all versions" }
-                    check(versions==if(patch.name in setOf("Conversation diagnostics","Conversation update warning compatibility"))setOf("17.72.17.ve.arm64")else expected.getValue(pkg))
+                    check(versions==if(patch.name in setOf("Conversation diagnostics","Conversation update warning compatibility","Preserve displayed replies"))setOf("17.72.17.ve.arm64")else expected.getValue(pkg))
                 }
                 if(patch.name=="Conversation diagnostics")diagnostic=true
+                if(patch.name=="Preserve displayed replies"){check(!patch.default);retention=true}
                 if(patch.name=="Conversation update warning compatibility"){
                     check(patch.default){"Warning compatibility must be selected by default"}
                     compatibility=true
@@ -31,7 +32,11 @@ fun main(args:Array<String>) {
                 count++
             }
         }
-        check(diagnostic&&compatibility&&count==18) { "Expected the 16 base patches plus diagnostics and compatibility, got $count" }
+        check(diagnostic&&compatibility&&retention&&count==19) { "Expected 19 named patches, got $count" }
+        val retentionPayload=checkNotNull(jar.getJarEntry("extensions/displayed-replies.bin"))
+        val retentionTypes=jar.getInputStream(retentionPayload).buffered().use{DexBackedDexFile.fromInputStream(Opcodes.getDefault(),it).classes.map{c->c.type}.toSet()}
+        check(setOf("Lapp/geminipatch/retention/RetainedReplies;","Lapp/geminipatch/retention/ReplyStore;").all{it in retentionTypes})
+        check(retentionTypes.none{it.contains("Fixture")||it.contains("Probe")||it.contains("Test")})
         val payload=checkNotNull(jar.getJarEntry("extensions/conversation-diagnostics.bin"))
         val runtime=jar.getInputStream(payload).buffered().use{DexBackedDexFile.fromInputStream(Opcodes.getDefault(),it).classes.toList()}
         val types=runtime.map{it.type}.toSet()
@@ -49,5 +54,5 @@ fun main(args:Array<String>) {
         }
         println("Embedded diagnostic build verified: $embedded")
     }
-    println("Preview inventory verified: 18 named patches, exact versions, core compatibility and no test fixtures")
+    println("Preview inventory verified: 19 named patches, opt-in reply preservation, exact versions and no test fixtures")
 }

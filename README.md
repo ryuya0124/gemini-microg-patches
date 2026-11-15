@@ -2,6 +2,8 @@
 
 > **Diagnostic branch:** opt-in capture for the unresolved conversation update warning. See [diagnostic instructions](docs/diagnostics.md). This is not a fix or a replacement for the stable source. [Development record](diagnostics/README.md).
 
+> **試験機能:** 表示済みの本文・画像と任意の動画を、アプリ再起動後も端末内に保持できます。[使い方と保存上限](docs/displayed-replies.md)。Google `17.72.17.ve.arm64` 用の追加選択パッチです。
+
 microGを使い、通常領域とSamsungセキュアフォルダでGeminiを動かすためのMorpheパッチ集です。GoogleアプリとGeminiランチャーを別パッケージとして構築します。
 
 **最新の実機確認:** Google `17.72.17.ve.arm64`、Gemini `1.0.995038376`、パッチ `v0.3.2`。2026-11-12にSM-S948Q／Android17のセキュアフォルダuser150へ既存署名・データを保持して更新し、ユーザーがログイン状態の維持とチャット返答を確認。microGは既存環境を維持。通常領域は新版で未再検証。

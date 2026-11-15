@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="app.geminipatch.retentiontest">
+ <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="31" />
+ <application android:label="Private retention probe" />
+ <instrumentation android:name=".RetentionProbe" android:targetPackage="com.google.android.googlequicksearchbox.morphe" android:targetProcesses="com.google.android.googlequicksearchbox.morphe:search" />
+</manifest>

@@ -1,7 +1,7 @@
 name: Build conversation diagnostics
 on:
   push:
-    branches: ['diagnostics/**']
+    branches: ['diagnostics/**', 'feature/preserve-displayed-replies']
   workflow_dispatch:
 permissions:
   contents: read

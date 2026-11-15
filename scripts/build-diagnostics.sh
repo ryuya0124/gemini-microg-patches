@@ -8,6 +8,8 @@ require_file "$ROOT/tools/r8.jar"
 mkdir -p "$out/tests"
 javac -encoding UTF-8 -d "$out/tests" "$ROOT/diagnostics/runtime/app/geminipatch/diagnostics/CaptureInbox.java" "$ROOT/diagnostics/tests/CaptureInboxTest.java"
 "$JAVA" -cp "$out/tests" app.geminipatch.diagnostics.CaptureInboxTest
+javac -encoding UTF-8 -d "$out/tests" "$ROOT/diagnostics/retention/app/geminipatch/retention/ReplyStore.java" "$ROOT/diagnostics/tests/ReplyStoreTest.java"
+"$JAVA" -cp "$out/tests" app.geminipatch.retention.ReplyStoreTest
 mkdir -p "$out/runtime/classes" "$out/runtime/dex" "$out/resources/extensions" "$out/resources/diagnostics" "$out/patch-dex"
 python3 "$ROOT/diagnostics/package.py" schema "$out"
 javac -encoding UTF-8 -source 8 -target 8 -bootclasspath "$android_jar" -d "$out/runtime/classes" \
@@ -16,6 +18,11 @@ jar cf "$out/runtime/runtime.jar" -C "$out/runtime/classes" .
 "$JAVA" -cp "$ROOT/tools/r8.jar" com.android.tools.r8.D8 --release --min-api 26 --lib "$android_jar" \
   --output "$out/runtime/dex" "$out/runtime/runtime.jar"
 cp "$out/runtime/dex/classes.dex" "$out/resources/extensions/conversation-diagnostics.bin"
+mkdir -p "$out/retention/classes" "$out/retention/dex"
+javac -encoding UTF-8 -source 8 -target 8 -bootclasspath "$android_jar" -d "$out/retention/classes" "$ROOT/diagnostics/retention/app/geminipatch/retention/"*.java
+jar cf "$out/retention/runtime.jar" -C "$out/retention/classes" .
+"$JAVA" -cp "$ROOT/tools/r8.jar" com.android.tools.r8.D8 --release --min-api 26 --lib "$android_jar" --output "$out/retention/dex" "$out/retention/runtime.jar"
+cp "$out/retention/dex/classes.dex" "$out/resources/extensions/displayed-replies.bin"
 "$ROOT/scripts/compile-patches.sh"
 "$KOTLINC" "$ROOT/diagnostics/patches" -cp "$MORPHE:$BUILD_DIR/gemini-patches.jar" -module-name geminiDiagnostics -d "$out/addon.jar"
 python3 "$ROOT/diagnostics/package.py" merge "$out"
@@ -24,7 +31,7 @@ python3 "$ROOT/diagnostics/package.py" merge "$out"
 python3 "$ROOT/diagnostics/package.py" package "$out"
 version="$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1]))["version"])' "$ROOT/diagnostics/metadata.json")"
 bundle="$out/release/gemini-microg-patches-$version.mpp"
-"$KOTLINC" "$ROOT/scripts/kotlin/VerifyMpp.kt" "$ROOT/diagnostics/VerifyDiagnostics.kt" -cp "$MORPHE:$out/diagnostics-patches.jar" -d "$out/verify.jar"
+"$KOTLINC" "$ROOT/scripts/kotlin/VerifyMpp.kt" "$ROOT/diagnostics/VerifyDiagnostics.kt" "$ROOT/diagnostics/VerifyRetention.kt" -cp "$MORPHE:$out/diagnostics-patches.jar" -d "$out/verify.jar"
 "$JAVA" -cp "$out/verify.jar:$MORPHE" VerifyMppKt "$bundle" "$version"
 "$JAVA" -cp "$out/verify.jar:$MORPHE:$out/diagnostics-patches.jar" VerifyDiagnosticsKt "$bundle"
 "$JAVA" -jar "$MORPHE" list-patches --patches "$bundle" --out "$out/patch-list.txt"

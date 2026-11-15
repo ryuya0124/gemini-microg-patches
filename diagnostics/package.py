@@ -19,7 +19,7 @@ def write_jar(path,entries):
             archive.writestr(info,data)
 if mode=='schema':
     # Fresh generated classes/DEX prevent stale anonymous classes entering the release.
-    for relative in ['runtime/classes','runtime/dex','patch-dex']:
+    for relative in ['runtime/classes','runtime/dex','patch-dex','retention/classes','retention/dex']:
         generated=(out/relative).resolve()
         assert generated.is_relative_to(out) and generated!=out
         if generated.exists():shutil.rmtree(generated)
