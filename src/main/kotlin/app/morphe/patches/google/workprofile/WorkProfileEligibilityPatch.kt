@@ -18,7 +18,6 @@ val workProfileEligibilityPatch = bytecodePatch(
     default = true
 ) {
     compatibleWith(*VersionHookRegistry.compatibility("com.google.android.googlequicksearchbox"))
-    dependsOn(app.morphe.patches.google.common.resourceTablePreloadPatch)
     execute {
         val spec = VersionHookRegistry.target(HookId.WORK_PROFILE_ELIGIBILITY, packageMetadata)
         val candidates = classDefByStrings(spec.anchorStrings[0])

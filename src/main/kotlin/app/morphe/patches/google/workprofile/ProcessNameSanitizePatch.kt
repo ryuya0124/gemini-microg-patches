@@ -37,7 +37,6 @@ val processNameSanitizePatch = bytecodePatch(
     default = true
 ) {
     compatibleWith(*VersionHookRegistry.compatibility("com.google.android.googlequicksearchbox"))
-    dependsOn(app.morphe.patches.google.common.resourceTablePreloadPatch)
 
     execute {
         val spec = VersionHookRegistry.target(HookId.PROCESS_NAME_REDIRECT, packageMetadata)

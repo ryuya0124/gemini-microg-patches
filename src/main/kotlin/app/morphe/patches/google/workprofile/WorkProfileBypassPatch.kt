@@ -17,7 +17,6 @@ val bypassWorkProfilePatch = bytecodePatch(
     default = true
 ) {
     compatibleWith(*VersionHookRegistry.compatibility("com.google.android.googlequicksearchbox"))
-    dependsOn(app.morphe.patches.google.common.resourceTablePreloadPatch)
 
     execute {
         val pkgName = packageMetadata.packageName

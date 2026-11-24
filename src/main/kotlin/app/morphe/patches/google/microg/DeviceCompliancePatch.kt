@@ -16,7 +16,6 @@ val deviceComplianceRedirectPatch = bytecodePatch(
     default = true
 ) {
     compatibleWith(*VersionHookRegistry.compatibility("com.google.android.googlequicksearchbox"))
-    dependsOn(app.morphe.patches.google.common.resourceTablePreloadPatch)
     execute {
         val feature = VersionHookRegistry.target(HookId.DEVICE_COMPLIANCE_FEATURE, packageMetadata)
         val featureClass = classDefByStrings(feature.anchorStrings[0]).single()

@@ -50,18 +50,26 @@ Mutable classes: 350 → 348 of 158,074. Below about 1 GB of heap both versions 
 
 ## 500 MB heap on a phone
 
-Target from the maintainer: Morphe on a phone has about 500 MB of Java heap for patching. Measured with Desktop 2.3.0 (Patcher 2.5.0), same Google base APK:
+Target from the maintainer: Morphe on a phone has about 500 MB of heap for patching. Morphe Manager 2.7.1 patches either in its embedded JVM (allowed 2 GB on a 4 GB AVD) or, with "Use embedded VM" off, in Android's runtime with the app heap. The latter was set to 512 MB (`dalvik.vm.heapsize=512m`) on dedicated Android 12 (API 31) and Android 17 (API 37) AVDs to reproduce a phone.
 
-| Selection | 256 MB | 512 MB | 768 MB | 896 MB | 1024 MB |
-|---|---|---|---|---|---|
-| No patch selected | – | ok (384 MB ok) | ok | – | – |
-| Bytecode patch only (instruction indexes, no resources) | – | ok (384 MB ok) | ok | – | – |
-| Any resource patch, e.g. a read-only manifest edit | – | OOM | OOM | – | – |
-| Official `Clone app` alone | OOM | OOM | OOM | ok | ok |
-| Official `Disable Play Store updates` alone | OOM | OOM | OOM | OOM | OOM |
-| This bundle, default selection | – | OOM | OOM | OOM | ok |
-| This bundle on **Gemini** | ok | ok | ok | – | – |
+**Cause.** As soon as a selected patch is a resource patch, Patcher 2.5 parses the whole 87 MB `resources.arsc` of Google with ARSCLib before any patch runs (`prepareDecodingOnRequest`). With the previous build Manager failed there: `OutOfMemoryError` at 511 MB in `TableBlock.load`, Android 12, Google 17.72.17 universal APK.
 
-As soon as any resource patch is selected, Patcher's `prepareDecodingOnRequest` parses the whole 87 MB `resources.arsc` of Google with ARSCLib before any patch runs. That alone does not fit in 768 MB, and it happens with official patches too, including editing the manifest in binary form with `resourceXml()`. A Google clone needs manifest changes (package, permissions, providers), so Google cannot be patched within 500 MB with Patcher 2.5 whatever these patches do. Gemini fits even in 256 MB.
+**Change.** The Google manifest edits (manifest tweaks, automatic clone setup, clone permission references) are raw resource patches now. When no other selected patch needs decoded resources, Patcher only extracts raw entries; the binary manifest is edited with ARSCLib (`AndroidManifestBlock`, no resource table) and written as the `AndroidManifest.xml` root entry, which replaces the manifest in the output APK. The package name in the `resources.arsc` package header is renamed in place, as compiling decoded resources did. When another selected patch needs decoded resources (for example official resource patches), the same edits run on the decoded document as before. The resource preload step is removed. The input APK path is not exposed to raw patches, so it is read from the patcher context by reflection and must resolve to exactly one APK with a manifest.
 
-The remaining gap between official `Clone app` (fits in 896 MB) and this bundle (about 1 GB) is the instruction index built for the string searches. Removing it would not reach 500 MB either.
+**Output.** Desktop 2.3.0 output of the raw path against the previous decoded path: all 158,075 DEX classes identical; manifest `aapt2 dump xmltree` identical except line numbers; resource table package name identical. `resources.arsc` is otherwise the original table, so it keeps the two key names (`checkbox` …) the decoding encoder had replaced with `id_0x…`.
+
+**Manager 2.7.1, Android runtime, 512 MB heap:**
+
+| Device | Input | Previous build | This build |
+|---|---|---|---|
+| Android 12 AVD | Google universal APK (minSdk 30) | OOM in resource table | ok, peak 288 MB, 12.6 s |
+| Android 17 AVD | Google base APK only | – | ok, peak 269 MB; app needs the density split at runtime |
+| Android 17 AVD | Google universal APK | – | ok, peak 293 MB, 35 s |
+| Android 17 AVD | Google base + xxhdpi split as `.apks` | – | OOM in Manager's split merge before patching |
+| Android 17 AVD | Gemini base APK | – | ok, peak 29 MB |
+
+Embedded JVM (Manager default on this AVD): previous build ok with peak 1,043 MB. Desktop 2.3.0 with `-Xmx512m`: ok, 697 MB RSS.
+
+The universal Google builds installed from Manager and launched on both Android versions without a crash (Discover offline without an account). Gemini launched and handed off to the Google clone. microG RE was installed; no account, chat or conversation-warning path was exercised.
+
+**Remaining limit.** Manager merges a split bundle (`.apks`/`.apkm`) with ARSCLib before Patcher runs and parses the full table there; this does not fit in 512 MB and is outside these patches. On a low-memory phone use the single universal APK of the supported version, or keep Manager's embedded VM on.
