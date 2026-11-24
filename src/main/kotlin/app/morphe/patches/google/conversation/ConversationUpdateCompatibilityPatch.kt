@@ -1,6 +1,7 @@
 package app.morphe.patches.google.conversation
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.google.common.HookId
 import app.morphe.patches.google.common.VersionHookRegistry
@@ -47,6 +48,41 @@ val conversationUpdateCompatibilityPatch = bytecodePatch(
             check-cast p1, ${spec.value("streamResponse")}
         """.trimIndent())
         check(streamMethod.implementation!!.registerCount == streamRegisters)
-        VersionHookRegistry.logHook(HookId.CONVERSATION_UPDATE_WARNING, "profile", "history and reply receivers hooked")
+        // Turns carry their own warning, which history and replies hand to this mapping.
+        val turn = spec.value("turnMethod")
+        val turnClass = classDefBy(turn.substringBefore("->"))
+        fun id(m: com.android.tools.smali.dexlib2.iface.Method) = "${m.definingClass}->${m.name}(${m.parameterTypes.joinToString("")})${m.returnType}"
+        val turnRegisters = turnClass.methods.single { id(it) == turn }.implementation!!.registerCount
+        val turnMethod = mutableClassDefBy(turnClass).methods.single { id(it) == turn }
+        turnMethod.addInstructions(0, """
+            invoke-static/range {p1 .. p1}, $runtime->filterTurn(Ljava/lang/Object;)Ljava/lang/Object;
+            move-result-object p1
+            check-cast p1, Lgfnl;
+        """.trimIndent())
+        check(turnMethod.implementation!!.registerCount == turnRegisters)
+
+        // The newer chat history sends a message update after each reply; filter it where it is cast.
+        var updates = 0
+        for (site in spec.value("updateCasts").split('|')) {
+            val owner = classDefBy(site.substringBefore("->"))
+            val registers = owner.methods.single { id(it) == site }.implementation!!.registerCount
+            val method = mutableClassDefBy(owner).methods.single { id(it) == site }
+            val casts = method.instructions.withIndex().filter { (_, ins) ->
+                ins.opcode == com.android.tools.smali.dexlib2.Opcode.CHECK_CAST &&
+                    (ins as com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction).reference.toString() == "Lgicm;"
+            }
+            check(casts.size == 1) { "Unexpected message update casts in $site: ${casts.size}" }
+            val (index, cast) = casts.single()
+            val register = (cast as com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction).registerA
+            method.addInstructions(index + 1, """
+                invoke-static/range {v$register .. v$register}, $runtime->filterUpdate(Ljava/lang/Object;)Ljava/lang/Object;
+                move-result-object v$register
+                check-cast v$register, Lgicm;
+            """.trimIndent())
+            check(method.implementation!!.registerCount == registers)
+            updates++
+        }
+        check(updates == 2)
+        VersionHookRegistry.logHook(HookId.CONVERSATION_UPDATE_WARNING, "profile", "history, reply, turn and $updates history-update sites hooked")
     }
 }

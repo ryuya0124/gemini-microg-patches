@@ -13,6 +13,8 @@
 - 強化点: 応答内のどこにある警告(punt)もフィールド経路で記録（conversation_punt_located）、0.3.8の警告処理の前後で警告が残るか（warning_handling: history/reply before/after）、microG・Play開発者サービス・Play Storeの版、Android版と機種。
 - 診断画面のManifest追加もraw編集。Android17 AVD・Manager2.7.1・ART512MBでユニバーサルAPKの生成成功（最大420MB）、上書きインストール、記録→保存→照合一致を確認。アカウントなしなので会話イベントは未確認。
 - 会話の保存機能（preserve displayed replies）は修正ではないので含めない。
+- 公開: [v0.3.9 プレリリース](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.9)（commit 0c4a816、MPP 970dd610…1940＝AVDで試したCI生成物）。[Issue #8返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-7122084893)でお詫びと更新・記録の手順を案内。
+- 公開後の静的調査（未公開・このブランチ）: 警告型Lghto;を持つプロトはgffq.d/gfeh.p,q/gfnl.k/gicm.eの5つ。0.3.8はgfnl.k（ターン、aoii.aが読む、bit256）とgicm.e（新しい会話履歴Bonobo/ChatHistoryV2のメッセージ更新、bkyu.b・bkzf.invokeSuspendでgibl.cからキャスト、bit16）を処理していなかった。報告の「返信のたびに警告が戻る」と合う。両方を警告処理に追加し、診断も全5か所の前後を記録。ビット位置はmessage info文字列から解読し既知値(gfnl.k=256,gfeh.p=512,gffq.d=1)で照合。Android17 AVDのapp_processで実クラスを使った合成テスト（除去/原本不変/別警告・別behavior保持）全通過、位置特定（gibl.c.eの入れ子含む）とART検証も通過。実アカウントでの会話は未確認。
 
 ## 2026-11-24: Issue #9 v0.3.8（Patcher 2.5・省メモリ）
 

@@ -73,7 +73,7 @@
     "textSet": 1685,
     "history": 1,
     "puntRendered": 1,
-    "handling": 4
+    "handling": 10
   },
   "analysis": [
     "API30 original and Store original have identical fourteen DEX files; source version/code remain guarded.",
@@ -82,5 +82,7 @@
     "gfnf metadata schema matches the later gsap schema; gfnl is the corresponding native conversation-turn proto.",
     "MainActivity receives the observer at method entry, while p0 still aliases the Activity; register counts never increase.",
     "Manifest Application inherits onCreate through wsg -> wsa -> wsc -> wry. The wry entry initializes the observer context in every Google app process."
-  ]
+  ],
+  "turnMethod": "Laoii;->a(Lgfnl;Laqjr;Ljava/lang/String;Lggmr;Lhiiq;)Ljava/lang/Object;",
+  "updateCasts": "Lbkyu;->b(Lgibd;Lhiiq;)Ljava/lang/Object;|Lbkzf;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;"
 }

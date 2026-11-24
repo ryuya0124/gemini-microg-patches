@@ -33,7 +33,7 @@ public final class Capture {
     private static final LinkedBlockingDeque<Runnable> TASKS = new LinkedBlockingDeque<Runnable>();
     private static final AtomicInteger DROPPED = new AtomicInteger();
     /** Entries of the warning handling in 0.3.8: before and after it filters history and replies. */
-    static final String[] HOOKS = {"historyBefore", "historyAfter", "replyBefore", "replyAfter"};
+    static final String[] HOOKS = {"historyBefore", "historyAfter", "replyBefore", "replyAfter", "turnBefore", "turnAfter", "updateBefore", "updateAfter"};
     private static final AtomicIntegerArray HOOK_CALLS = new AtomicIntegerArray(HOOKS.length);
     private static final ThreadLocal<Long> OBSERVED_AT = new ThreadLocal<Long>();
     private static final CaptureInbox INBOX = new CaptureInbox(new CaptureInbox.Dispatch() {
@@ -365,6 +365,10 @@ public final class Capture {
     public static void historyAfter(Object value) { handling(1, value, "history_after"); }
     public static void replyBefore(Object value) { handling(2, value, "reply_before"); }
     public static void replyAfter(Object value) { handling(3, value, "reply_after"); }
+    public static void turnBefore(Object value) { handling(4, value, "turn_before"); }
+    public static void turnAfter(Object value) { handling(5, value, "turn_after"); }
+    public static void updateBefore(Object value) { handling(6, value, "update_before"); }
+    public static void updateAfter(Object value) { handling(7, value, "update_after"); }
     private static void handling(final int hook, final Object value, final String stage) {
         HOOK_CALLS.incrementAndGet(hook);
         if (!active || value == null) return;

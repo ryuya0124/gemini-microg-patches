@@ -105,8 +105,10 @@ val google177217 = AppVersionProfile(
         HookId.APP_LABEL_UPDATE to TargetSpec(description = "Google (Morphe)"),
         HookId.CONVERSATION_UPDATE_WARNING to TargetSpec(
             className = "Latze;", methodName = "a", methodDescriptor = "(Ljava/lang/Object;)V", expectedMatches = 1,
-            values = mapOf("superclass" to "Lhggx;", "streamClass" to "Laopx;", "streamMethod" to "<init>", "streamDescriptor" to "(Lgfeh;)V", "streamResponse" to "Lgfeh;"),
-            description = "History receive (gffq.d) and reply wrapper (gfeh.p/q). Runtime removes only the exact English update punt, behavior 1; the response object is copied, never mutated."
+            values = mapOf("superclass" to "Lhggx;", "streamClass" to "Laopx;", "streamMethod" to "<init>", "streamDescriptor" to "(Lgfeh;)V", "streamResponse" to "Lgfeh;",
+                "turnMethod" to "Laoii;->a(Lgfnl;Laqjr;Ljava/lang/String;Lggmr;Lhiiq;)Ljava/lang/Object;",
+                "updateCasts" to "Lbkyu;->b(Lgibd;Lhiiq;)Ljava/lang/Object;|Lbkzf;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;"),
+            description = "History receive (gffq.d), reply wrapper (gfeh.p/q), turn mapping (gfnl.k, bit 256) and chat history V2 message updates (gicm.e, bit 16) after their casts from gibl.c. Runtime removes only the exact English update punt, behavior 1; messages are copied, never mutated."
         ),
         HookId.ACCOUNT_SWITCH_LOCK_BYPASS to TargetSpec(
             enabled = false, anchorStrings = listOf("Acquired account-switch Mutex."),

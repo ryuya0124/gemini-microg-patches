@@ -88,7 +88,8 @@ val conversationDiagnosticsPatch = bytecodePatch(
         val rootCounts = mutableMapOf<String, Int>()
         val activity = value("activity")
         // The warning handling casts the reply again; its own before/after hooks observe it.
-        val handled = setOf(value("historyUpdateReceiveMethod"), value("streamUpdateReceiveMethod"))
+        val handled = (listOf(value("historyUpdateReceiveMethod"), value("streamUpdateReceiveMethod"), value("turnMethod")) +
+            value("updateCasts").split('|')).toSet()
         classDefForEach { cls ->
             if (cls.type.startsWith("Lapp/geminipatch/")) return@classDefForEach
             val targets = cls.methods.filter { m -> m.implementation != null && (
@@ -154,25 +155,27 @@ val conversationDiagnosticsPatch = bytecodePatch(
 
 private const val HANDLING = "Lapp/geminipatch/extension/ConversationUpdateCompatibility;"
 
-/** Observes responses before and after the warning handling of 0.3.8 rewrote them. */
+/** Observes messages right before and after each call of the warning handling. */
 private fun app.morphe.patcher.patch.BytecodePatchContext.observeWarningHandling(counts: MutableMap<String, Int>) {
-    for ((method, before, after) in listOf(
-        Triple(value("historyUpdateReceiveMethod"), "historyBefore", "historyAfter"),
-        Triple(value("streamUpdateReceiveMethod"), "replyBefore", "replyAfter"),
-    )) {
+    val stages = mapOf("filter" to "history", "filterStream" to "reply", "filterTurn" to "turn", "filterUpdate" to "update")
+    val owners = listOf(value("historyUpdateReceiveMethod"), value("streamUpdateReceiveMethod"), value("turnMethod")) +
+        value("updateCasts").split('|')
+    for (method in owners) {
         val owner = classDefBy(method.substringBefore("->"))
         val m = mutableClassDefBy(owner).methods.single { id(it) == method }
         val registers = m.implementation!!.registerCount
-        val instructions = m.instructions.toList()
-        val call = instructions.indexOfFirst {
-            ((it as? ReferenceInstruction)?.reference as? MethodReference)?.definingClass == HANDLING
+        val calls = m.instructions.withIndex().filter { (_, ins) ->
+            ((ins as? ReferenceInstruction)?.reference as? MethodReference)?.definingClass == HANDLING
         }
-        check(call == 0) { "Warning handling is not at the start of $method" }
-        check(instructions[1].opcode == Opcode.MOVE_RESULT_OBJECT)
-        // After move-result, and after check-cast where the reply constructor narrows the type again.
-        val afterIndex = if (instructions[2].opcode == Opcode.CHECK_CAST) 3 else 2
-        m.addInstructions(afterIndex, "invoke-static/range {p1 .. p1}, $HELPER->$after(Ljava/lang/Object;)V")
-        m.addInstructions(0, "invoke-static/range {p1 .. p1}, $HELPER->$before(Ljava/lang/Object;)V")
+        check(calls.size == 1) { "Expected one warning handling call in $method" }
+        val (index, call) = calls.single()
+        val stage = stages.getValue(((call as ReferenceInstruction).reference as MethodReference).name)
+        val register = (call as RegisterRangeInstruction).startRegister
+        val instructions = m.instructions.toList()
+        check(instructions[index + 1].opcode == Opcode.MOVE_RESULT_OBJECT)
+        val after = if (instructions[index + 2].opcode == Opcode.CHECK_CAST) index + 3 else index + 2
+        m.addInstructions(after, "invoke-static/range {v$register .. v$register}, $HELPER->${stage}After(Ljava/lang/Object;)V")
+        m.addInstructions(index, "invoke-static/range {v$register .. v$register}, $HELPER->${stage}Before(Ljava/lang/Object;)V")
         check(m.implementation!!.registerCount == registers)
         counts["handling"] = (counts["handling"] ?: 0) + 2
     }

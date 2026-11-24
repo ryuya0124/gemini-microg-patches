@@ -7,7 +7,8 @@ import java.util.Objects;
 
 /**
  * Google 17.72.17.ve.arm64 only: drop the recognized "Conversation requires an update" punt from
- * history and reply responses. Any other warning, behavior or unexpected schema keeps the original.
+ * history and reply responses, conversation turns and chat history updates. Any other warning,
+ * behavior or unexpected schema keeps the original.
  */
 public final class ConversationUpdateCompatibility {
     private static final String TITLE = "conversation requires an update";
@@ -31,6 +32,18 @@ public final class ConversationUpdateCompatibility {
         } catch (Throwable ignored) {
             return original;
         }
+    }
+
+    /** A conversation turn, as history and replies deliver it. */
+    public static Object filterTurn(Object original) {
+        if (original == null || !original.getClass().getName().equals("gfnl")) return original;
+        return filterPunt(original, "k", 256);
+    }
+
+    /** A message update of the newer chat history, sent again after each reply completes. */
+    public static Object filterUpdate(Object original) {
+        if (original == null || !original.getClass().getName().equals("gicm")) return original;
+        return filterPunt(original, "e", 16);
     }
 
     private static Object filterPunt(Object original, String field, int bit) {
