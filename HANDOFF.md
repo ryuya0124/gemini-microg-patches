@@ -11,6 +11,7 @@
 - Patcher-Version 2.5.0へ移行、replaceStringsで文字列置換を集約。診断ブランチから「会話の更新要求警告」の互換処理だけを診断コード抜きで移植（Google17.72.17のみ、既定ON）。
 - 端末500MB想定: Manager2.7.1の「Use embedded VM」オフ＝ART 512MBで旧版はresources.arsc全解析でOOM。Googleのマニフェスト編集をraw resource patch＋バイナリAXML直接編集に変更し、表を解析しない。Android12/17 AVD（heapsize512m）でユニバーサルAPKはピーク約290MBで成功・起動確認、Geminiは29MB。
 - 残課題（次版0.3.9）: 分割バンドル(.apks/.apkm)はManagerのsplit結合がパッチ前に表全体を読むため512MBでOOM。パッチ側の外。詳細は docs/testing/issue-9-patcher-2.5.md。
+- 公開: [v0.3.8](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.8)（commit cae88e7、MPP SHA256 87b8797a…2569。AVD検証・CI・公開物が一致）。[Issue返信](https://github.com/ryuya0124/gemini-microg-patches/issues/9#issuecomment-7121307351)済み、Issueは開いたまま報告者の確認待ち。
 - 2026-11-24のミス: コミット本文の「Fixes #9」でpush時にIssueが自動クローズされ、再オープンした。Issueはリリース→返信→報告者の確認→クローズの順。コミットにFixes/Closesを書かない。
 - 専用AVD: GeminiPatch_API31（Android12）、GeminiPatch_API37（Android17）。dalvik.vm.heapsizeは再起動で戻るので、テスト時にroot→setprop→stop/startで512mにする。Manager APKとテスト出力はGit対象外のlocal/issue9。
 
