@@ -1,6 +1,6 @@
 # Conversation update warning: diagnostic build
 
-This experimental prerelease is the normal **0.3.8** patches plus an opt-in diagnostics screen for [Issue #8](https://github.com/ryuya0124/gemini-microg-patches/issues/8). The stable update source stays on 0.3.8.
+This experimental prerelease is the normal **0.3.8** patches plus a test fix for the “Conversation requires an update” warning and an opt-in diagnostics screen for [Issue #8](https://github.com/ryuya0124/gemini-microg-patches/issues/8). The stable update source stays on 0.3.8.
 
 It supports **Google `17.72.17.ve.arm64` (301831138) only**.
 
@@ -8,8 +8,8 @@ It supports **Google `17.72.17.ve.arm64` (301831138) only**.
 
 Keep your original APKs, Gemini installation, Morphe signing key and settings. Do not uninstall anything or clear app data.
 
-1. Download `gemini-microg-patches-0.3.9.mpp` from [the prerelease](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.9).
-2. In Morphe Manager, open **Sources**, expand **Gemini microG patches**, tap **Update** and choose the downloaded file. The card must show **0.3.9**.
+1. Download `gemini-microg-patches-0.3.10.mpp` from [the prerelease](https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.10).
+2. In Morphe Manager, open **Sources**, expand **Gemini microG patches**, tap **Update** and choose the downloaded file. The card must show **0.3.10**.
 3. Open **Google**, tap **Patch** and keep the default selection, including **Conversation diagnostics**.
 4. Tap **Install** and confirm Android's **Update**. Importing the file alone does **not** update the app.
 
@@ -25,13 +25,13 @@ Recording stops after 15 minutes. Starting again replaces the previous report. *
 
 ## What the report contains
 
-App versions (Google, Gemini, microG, Play services, Play Store), Android version and phone model, numeric feature IDs, client version strings, response and error codes, app code and view identifiers, where a warning appears in a response (field path only) and whether it was still present after the 0.3.8 warning handling, and booleans for whether known warning text was detected.
+App versions (Google, Gemini, microG, Play services, Play Store), Android version and phone model, numeric feature IDs, client version strings, response and error codes, app code and view identifiers, where a warning appears in a response (field path only) and whether it was still present after the warning handling, and booleans for whether known warning text was detected.
 
 It does **not** save chat text, titles, account names, email addresses, conversation IDs, URLs, credentials or raw responses.
 
 ## For maintainers
 
-The report identifies the installed diagnostic build only by an opaque code (`r`, `cr` and each process `identity.r`). `python3 diagnostics/package.py token build/diagnostics 0.3.9` prints the code of a version; `scripts/check-diagnostic-report.py REPORT --expected-build 0.3.9` checks a report against it without printing its contents.
+The report identifies the installed diagnostic build only by an opaque code (`r`, `cr` and each process `identity.r`). `python3 diagnostics/package.py token build/diagnostics 0.3.10` prints the code of a version; `scripts/check-diagnostic-report.py REPORT --expected-build 0.3.10` checks a report against it without printing its contents.
 
 ## Return to stable
 
