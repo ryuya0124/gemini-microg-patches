@@ -4,6 +4,8 @@ import app.morphe.patches.google.common.versions.google177011
 import app.morphe.patches.google.common.versions.gemini10995038376
 import app.morphe.patches.google.common.versions.google177217
 import app.morphe.patcher.PackageMetadata
+import app.morphe.patcher.patch.AppTarget
+import app.morphe.patcher.patch.Compatibility
 import app.morphe.patches.google.common.versions.google175418
 import app.morphe.patches.google.common.versions.gemini10958859967
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
@@ -69,6 +71,26 @@ object VersionHookRegistry {
     init {
         check(profiles.map { it.packageName to it.versionName }.distinct().size == profiles.size)
     }
+
+    /**
+     * Morphe's displayed compatibility uses the same exact versions as the execution guard.
+     * Unregistered versions are still refused by [requireProfile] at patch time.
+     */
+    fun compatibility(vararg packageNames: String): Array<Compatibility> =
+        packageNames.map { packageName ->
+            val versions = profiles.filter { it.packageName == packageName }.map { it.versionName }
+            check(versions.isNotEmpty()) { "No verified versions for $packageName" }
+            Compatibility(
+                packageName = packageName,
+                name = APP_NAMES.getValue(packageName),
+                targets = versions.distinct().map { AppTarget(version = it) },
+            )
+        }.toTypedArray()
+
+    private val APP_NAMES = mapOf(
+        "com.google.android.googlequicksearchbox" to "Google",
+        "com.google.android.apps.bard" to "Gemini",
+    )
 
     fun findProfile(packageName: String, versionName: String): AppVersionProfile? =
         profiles.singleOrNull { it.packageName == packageName && it.versionName == versionName }

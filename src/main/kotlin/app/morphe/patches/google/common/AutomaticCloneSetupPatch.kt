@@ -21,7 +21,7 @@ private data class CloneManifestInput(
 )
 
 /**
- * Keep this default patch sorted before optional external "Clone app". Patcher 1.12
+ * Keep this default patch sorted before optional external "Clone app". Patcher 1.12-2.5
  * executes selected patches by name and finalizes in reverse execution order, so
  * this snapshot-based finalizer also repairs the external patch's default options.
  * No external patch implementation or reflective option mutation is required.
@@ -31,7 +31,7 @@ val automaticCloneSetupPatch = resourcePatch(
     description = "Automatically creates the fixed .morphe clone and isolates its permissions and providers. No official Clone app or Expert mode configuration is required.",
     default = true
 ) {
-    compatibleWith("com.google.android.googlequicksearchbox", "com.google.android.apps.bard")
+    compatibleWith(*VersionHookRegistry.compatibility("com.google.android.googlequicksearchbox", "com.google.android.apps.bard"))
     var input: CloneManifestInput? = null
 
     execute {

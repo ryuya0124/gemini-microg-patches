@@ -8,7 +8,7 @@ fun main(args: Array<String>) {
         val manifest = jar.manifest.mainAttributes
         check(manifest.getValue("Name") == "Gemini microG patches")
         check(manifest.getValue("Version") == args[1])
-        check(manifest.getValue("Patcher-Version") == "1.12.0")
+        check(manifest.getValue("Patcher-Version") == "2.5.0")
         val entries = jar.entries().asSequence().toList()
         val jvmTypes = entries.filter { it.name.endsWith(".class") }
             .map { "L${it.name.removeSuffix(".class")};" }.toSet()

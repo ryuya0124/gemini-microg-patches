@@ -222,3 +222,10 @@ ProcessNameProbeがインストール済みAPKの実コードを呼び、初回/
 - APK入力guard追加後のManager最終マトリクスも23/23成功。証拠はMacのlocal/issue8/play-store/manager-final-results、集計JSONのWindows控えはoutputs/v0.3.5-evidence。認証済UI XMLは公開しない。
 - [Issue返信](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-6827381066)で原因と、原本両APKをsource既定選択＋任意の更新停止で再パッチする方法を短く案内。Issueは閉じていない。投稿者の実機での解消報告はまだない。
 - 専用の旧回帰AVD5580/5582は名前を確認して停止。ユーザーがログインしたPlay Store AVD5584とWindowsのscrcpy画面は維持し、アカウント/公式アプリを消去していない。実機/Tail ADB/ADBサーバーは変更・停止していない。
+
+## Issue #9 Patcher 2.5移行・メモリ削減（2026-11-24、未公開）
+
+- [Issue #9](https://github.com/ryuya0124/gemini-microg-patches/issues/9)：Patcher 1.12向けのままで、メモリ使用が多くMorpheが落ちるとの報告。作業はworktree `/Users/ryuya/Documents/GeminiPatch-issue9`、branch `fix/issue9-patcher-2.5`（origin/main基準）。mainの未コミットのIssue #8候補とは混ぜていない。
+- 主因はMPPの `Patcher-Version: 1.12.0`。Patcher 2.xは2.0未満のバンドルが1つでもあると全バンドルで全リソースを先に展開する旧動作になる。2.5.0宣言に変更し、`replaceStrings()`で文字列置換、変更するクラスだけmutable化、索引構築前にリソーステーブルを読む読み取り専用の依存を追加。
+- Desktop 2.3.0で旧v0.3.5出力とDEX全クラス・aapt2のリソース/文字列/Manifestが一致。6GB上限でGoogleのRSS 3.8GB→2.1GB、6.3秒→2.7秒。必要ヒープの下限は旧新とも約1GBでAPK自体が決める。repoの全検証が成功。詳細は docs/testing/issue-9-patcher-2.5.md。
+- 未実施：Android Manager 2.7.1の実GUI生成と実機/AVDでの起動（専用AVDはWindows側）。公開・タグ・Issue返信もまだ。
