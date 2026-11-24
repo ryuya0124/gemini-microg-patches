@@ -14,7 +14,7 @@ import java.nio.ByteOrder
 import java.util.zip.ZipFile
 
 /** The manifest operations these patches need, on the decoded document or on the binary manifest. */
-internal interface ManifestElement {
+interface ManifestElement {
     val tag: String
     /** An android: attribute as a string, or "" when it is absent or not a literal string. */
     fun android(name: String): String
@@ -30,7 +30,7 @@ internal interface ManifestElement {
     fun remove()
 }
 
-internal interface ManifestDocument {
+interface ManifestDocument {
     val root: ManifestElement
     /** Elements named [tag] in document order, or all of them for "*", as getElementsByTagName. */
     fun elements(tag: String): List<ManifestElement>
@@ -44,7 +44,7 @@ internal interface ManifestDocument {
  * Google app that table alone needs more memory than a phone gives the patcher. When resources are
  * decoded anyway (another selected patch needs them), the decoded document is edited instead.
  */
-internal fun ResourcePatchContext.editManifest(block: (ManifestDocument) -> Unit) {
+fun ResourcePatchContext.editManifest(block: (ManifestDocument) -> Unit) {
     if (!usesBinaryManifest()) {
         @Suppress("DEPRECATION")
         document("AndroidManifest.xml").use { block(DomManifest(it)) }
@@ -64,7 +64,7 @@ internal fun ResourcePatchContext.editManifest(block: (ManifestDocument) -> Unit
 
 /** Whether resources stay raw, so the manifest is edited in its binary form. */
 @Suppress("DEPRECATION")
-internal fun ResourcePatchContext.usesBinaryManifest(): Boolean = listDecodableFiles("AndroidManifest.xml").isEmpty()
+fun ResourcePatchContext.usesBinaryManifest(): Boolean = listDecodableFiles("AndroidManifest.xml").isEmpty()
 
 /**
  * Renames the package of the raw resource table in place, as compiling decoded resources does for a
@@ -187,6 +187,8 @@ private val ANDROID_IDS = mapOf(
     "readPermission" to 0x01010007,
     "writePermission" to 0x01010008,
     "enabled" to 0x0101000e,
+    "exported" to 0x01010010,
+    "taskAffinity" to 0x01010012,
     "authorities" to 0x01010018,
     "value" to 0x01010024,
 )

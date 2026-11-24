@@ -1,0 +1,179 @@
+package app.morphe.patches.google.diagnostics
+
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.instructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
+import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.rawResourcePatch
+import app.morphe.patcher.patch.AppTarget
+import app.morphe.patcher.patch.Compatibility
+import app.morphe.patches.google.common.editManifest
+import app.morphe.patches.google.conversation.conversationUpdateCompatibilityPatch
+import app.morphe.patches.google.common.VersionHookRegistry
+import app.morphe.patches.google.common.automaticCloneSetupPatch
+import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.*
+import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import java.util.Properties
+
+private object Payload
+// Manager's external JVM host does not expose the desktop JSON implementation.
+// package.py derives this resource from the owning JSON profile during the build.
+private val profile by lazy {
+    Properties().apply { checkNotNull(Payload::class.java.getResourceAsStream("/diagnostics/profile.properties")).use { load(it) } }
+}
+private fun value(name: String) = checkNotNull(profile.getProperty(name)) { "Missing diagnostic profile key $name" }
+private fun section(name: String) = profile.stringPropertyNames().filter { it.startsWith("$name.") }
+    .associate { it.removePrefix("$name.") to value(it) }
+private const val HELPER = "Lapp/geminipatch/diagnostics/Capture;"
+private fun id(m: Method) = "${m.definingClass}->${m.name}(${m.parameterTypes.joinToString("")})${m.returnType}"
+private fun textSetter(ins: Instruction): Boolean {
+    val ref = (ins as? ReferenceInstruction)?.reference as? MethodReference ?: return false
+    return ins.opcode in setOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL_RANGE) &&
+        ref.definingClass == "Landroid/widget/TextView;" && ref.name == "setText" &&
+        ref.parameterTypes.firstOrNull() == "Ljava/lang/CharSequence;" && ref.returnType == "V"
+}
+
+private val diagnosticsScreen = rawResourcePatch {
+    dependsOn(automaticCloneSetupPatch)
+    execute {
+        VersionHookRegistry.requireProfile(packageMetadata)
+        check(packageMetadata.packageName == value("packageName") && packageMetadata.versionName == value("versionName") && packageMetadata.versionCode == value("versionCode")) {
+            "Diagnostics support only the exact original Google version recorded in the diagnostic profile"
+        }
+        editManifest { doc ->
+            val app = doc.elements("application").single()
+            check(app.android("name") == value("application")) { "Application initialization profile changed" }
+            // Theme is set by the activity itself, so no framework resource reference is needed here.
+            val activity = app.addChild("activity")
+            activity.setAndroid("name", "app.geminipatch.diagnostics.CaptureActivity")
+            activity.setAndroidBoolean("exported", true)
+            activity.setAndroid("taskAffinity", "app.geminipatch.diagnostics")
+            activity.setAndroid("label", "Gemini diagnostics")
+            val filter = activity.addChild("intent-filter")
+            filter.addChild("action").setAndroid("name", "android.intent.action.MAIN")
+            filter.addChild("category").setAndroid("name", "android.intent.category.LAUNCHER")
+        }
+    }
+    finalize {
+        editManifest { doc ->
+            val queries = doc.elements("queries").firstOrNull() ?: doc.root.addChild("queries")
+            val existing = doc.elements("package").map { it.android("name") }.toSet()
+            for (name in listOf("com.google.android.googlequicksearchbox", "com.google.android.googlequicksearchbox.morphe",
+                    "com.google.android.apps.bard", "com.google.android.apps.bard.morphe", "app.revanced.android.gms",
+                    "com.google.android.gms", "com.android.vending")) {
+                if (name !in existing) queries.addChild("package").setAndroid("name", name)
+            }
+        }
+    }
+}
+
+// This source is compiled only by build-diagnostics.sh, never the stable bundle build.
+val conversationDiagnosticsPatch = bytecodePatch(
+    name = "Conversation diagnostics",
+    description = "Adds an opt-in, local-only diagnostics screen for conversation update warnings. No chat text or accounts are saved.",
+    default = true
+) {
+    compatibleWith(Compatibility(packageName = "com.google.android.googlequicksearchbox", name = "Google",
+        targets = listOf(AppTarget(version = "17.72.17.ve.arm64"))))
+    dependsOn(diagnosticsScreen, conversationUpdateCompatibilityPatch)
+    extendWith(java.util.function.Supplier { checkNotNull(Payload::class.java.getResourceAsStream("/extensions/conversation-diagnostics.bin")) })
+    execute {
+        val methods = section("methods")
+        val versions = (0 until value("versionFields.count").toInt()).associate { value("versionFields.$it.field") to value("versionFields.$it.observer") }
+        val caps = (0 until value("capabilityFields.count").toInt()).map { value("capabilityFields.$it") }.toSet()
+        val roots = section("incomingTypes").keys.map { "L$it;" }.toSet()
+        val counts = mutableMapOf<String, Int>()
+        val rootCounts = mutableMapOf<String, Int>()
+        val activity = value("activity")
+        // The warning handling casts the reply again; its own before/after hooks observe it.
+        val handled = setOf(value("historyUpdateReceiveMethod"), value("streamUpdateReceiveMethod"))
+        classDefForEach { cls ->
+            if (cls.type.startsWith("Lapp/geminipatch/")) return@classDefForEach
+            val targets = cls.methods.filter { m -> m.implementation != null && (
+                id(m) in methods.values || cls.type == activity && m.name == "onCreate" && m.parameterTypes == listOf("Landroid/os/Bundle;") ||
+                    m.implementation!!.instructions.any { ins ->
+                        val reference = (ins as? ReferenceInstruction)?.reference.toString()
+                        textSetter(ins) || ins.opcode == Opcode.CHECK_CAST && reference in roots && id(m) !in handled || ins.opcode == Opcode.IPUT_OBJECT && cls.type != "Lggjj;" && (reference in versions || reference in caps)
+                    }) }
+            if (targets.isEmpty()) return@classDefForEach
+            val mutable = mutableClassDefBy(cls)
+            for (target in targets) {
+                val m = mutable.methods.single { id(it) == id(target) }
+                val registers = m.implementation!!.registerCount
+                data class Edit(val index: Int, val code: String, val returnRegister: String? = null)
+                val edits = mutableListOf<Edit>()
+                fun observe(index: Int, register: String, method: String, type: String = "Ljava/lang/Object;", replaceReturn: Boolean = false) {
+                    edits.add(Edit(index, "invoke-static/range {$register .. $register}, $HELPER->$method($type)V", if (replaceReturn) register else null))
+                    counts[method] = (counts[method] ?: 0) + 1
+                }
+                if (cls.type == activity && m.name == "onCreate") observe(0, "p0", "attach", "Landroid/app/Activity;")
+                if (id(m) == methods["init"]) observe(0, "p0", "init", "Landroid/content/Context;")
+                if (id(m) == methods["stream"]) observe(0, "p1", "stream")
+                if (id(m) == methods["readOnly"]) observe(0, "p1", "readOnly")
+                if (id(m) == methods["history"]) observe(0, "p1", "history")
+                for ((i, ins) in m.instructions.toList().withIndex()) {
+                    val reference = (ins as? ReferenceInstruction)?.reference.toString()
+                    if (id(m) == methods["banner"] && ins.opcode == Opcode.IGET_OBJECT && reference == "Lbckt;->a:L${value("puntType")};")
+                        observe(i + 1, "v${(ins as TwoRegisterInstruction).registerA}", "puntRendered")
+                    if (textSetter(ins)) {
+                        val textRegister = if (ins is RegisterRangeInstruction) ins.startRegister + 1 else (ins as FiveRegisterInstruction).registerD
+                        observe(i + 1, "v$textRegister", "textSet", "Ljava/lang/CharSequence;")
+                    }
+                    if (ins.opcode == Opcode.CHECK_CAST && reference in roots && id(m) !in handled) {
+                        observe(i + 1, "v${(ins as OneRegisterInstruction).registerA}", "incoming")
+                        rootCounts[reference] = (rootCounts[reference] ?: 0) + 1
+                    }
+                    if (ins.opcode == Opcode.RETURN_OBJECT && id(m) == methods["status"]) observe(i, "v${(ins as OneRegisterInstruction).registerA}", "status", replaceReturn = true)
+                    if (ins.opcode == Opcode.RETURN_OBJECT && id(m) == methods["classified"]) observe(i, "v${(ins as OneRegisterInstruction).registerA}", "classified", "Ljava/lang/String;", replaceReturn = true)
+                    if (ins.opcode != Opcode.IPUT_OBJECT || cls.type == "Lggjj;") continue
+                    val register = "v${(ins as TwoRegisterInstruction).registerA}"
+                    if (reference in versions) observe(i + 1, register, versions.getValue(reference), "Ljava/lang/String;")
+                    if (reference in caps) observe(i + 1, register, "capabilities")
+                }
+                for (edit in edits.sortedByDescending { it.index }) {
+                    if (edit.returnRegister == null) m.addInstructions(edit.index, edit.code)
+                    else {
+                        // Retain the old RETURN location for existing branch labels. Inserting
+                        // before RETURN alone lets branches jump past the observer.
+                        m.replaceInstruction(edit.index, edit.code)
+                        m.addInstructions(edit.index + 1, "return-object ${edit.returnRegister}")
+                    }
+                }
+                check(m.implementation!!.registerCount == registers)
+            }
+        }
+        observeWarningHandling(counts)
+        for ((name, expected) in section("expectedSites")) check(counts[name] == expected.toInt()) { "Diagnostic hook count changed: $name ${counts[name]} vs $expected" }
+        check(rootCounts.keys == roots) { "Diagnostic response schema disappeared: ${roots - rootCounts.keys}" }
+        check((counts["textSet"] ?: 0) > 0) { "Native TextView setter discovery found no sites" }
+        println("[ConversationDiagnostics] Hook sites=$counts; schema casts=$rootCounts; original register counts retained")
+    }
+}
+
+private const val HANDLING = "Lapp/geminipatch/extension/ConversationUpdateCompatibility;"
+
+/** Observes responses before and after the warning handling of 0.3.8 rewrote them. */
+private fun app.morphe.patcher.patch.BytecodePatchContext.observeWarningHandling(counts: MutableMap<String, Int>) {
+    for ((method, before, after) in listOf(
+        Triple(value("historyUpdateReceiveMethod"), "historyBefore", "historyAfter"),
+        Triple(value("streamUpdateReceiveMethod"), "replyBefore", "replyAfter"),
+    )) {
+        val owner = classDefBy(method.substringBefore("->"))
+        val m = mutableClassDefBy(owner).methods.single { id(it) == method }
+        val registers = m.implementation!!.registerCount
+        val instructions = m.instructions.toList()
+        val call = instructions.indexOfFirst {
+            ((it as? ReferenceInstruction)?.reference as? MethodReference)?.definingClass == HANDLING
+        }
+        check(call == 0) { "Warning handling is not at the start of $method" }
+        check(instructions[1].opcode == Opcode.MOVE_RESULT_OBJECT)
+        // After move-result, and after check-cast where the reply constructor narrows the type again.
+        val afterIndex = if (instructions[2].opcode == Opcode.CHECK_CAST) 3 else 2
+        m.addInstructions(afterIndex, "invoke-static/range {p1 .. p1}, $HELPER->$after(Ljava/lang/Object;)V")
+        m.addInstructions(0, "invoke-static/range {p1 .. p1}, $HELPER->$before(Ljava/lang/Object;)V")
+        check(m.implementation!!.registerCount == registers)
+        counts["handling"] = (counts["handling"] ?: 0) + 2
+    }
+}

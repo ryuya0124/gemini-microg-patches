@@ -1,0 +1,7 @@
+{
+  "version": "0.3.9",
+  "description": "Gemini microG patches 0.3.8 with opt-in conversation diagnostics for Issue 8",
+  "created_at": "2026-11-24T00:00:00",
+  "base_tag": "v0.3.8",
+  "profile": "17.72.17.ve.arm64.json"
+}

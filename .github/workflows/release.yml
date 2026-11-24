@@ -5,7 +5,26 @@ on:
 permissions:
   contents: write
 jobs:
+  identity:
+    runs-on: ubuntu-latest
+    outputs:
+      stable: ${{ steps.kind.outputs.stable }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - id: kind
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          stable = os.environ['RELEASE_TAG'] == 'v' + json.load(open('patches-bundle.json'))['version']
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('stable=' + str(stable).lower() + '\n')
+          print('Stable feed matches tag' if stable else 'Experimental or historical tag; stable publisher skipped')
+          PY
   release:
+    needs: identity
+    if: ${{ needs.identity.outputs.stable == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

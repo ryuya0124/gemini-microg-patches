@@ -6,6 +6,14 @@
 
 利用者から見える変更点・修正点だけを短く書く。内部実装の説明やテスト結果は含めず、必要な開発記録はdocs/testingやこの引き継ぎメモに残す。2026-11-12の利用者の指示で、他のリポジトリにも共通する方針。v0.3.3の公開Release本文と元Markdownをこの形式へ修正済み。
 
+## 2026-11-24: Issue #8 診断プレリリース0.3.9（このブランチ diagnostics/v0.3.9）
+
+- 安定版0.3.8に診断（Conversation diagnostics）だけを足した実験版。安定版の更新情報（patches-bundle.json）は0.3.8のまま。release.ymlはタグとstable feedが一致する時だけ公開する。
+- 版はレポート・画面・ファイル名に数字で出さない。照合用コードは `python3 diagnostics/package.py token build/diagnostics 0.3.9`（0.3.9=kciv2hsg77）。報告者が古い版のまま送る傾向への対策。`scripts/check-diagnostic-report.py REPORT --expected-build 0.3.9` で一致確認。
+- 強化点: 応答内のどこにある警告(punt)もフィールド経路で記録（conversation_punt_located）、0.3.8の警告処理の前後で警告が残るか（warning_handling: history/reply before/after）、microG・Play開発者サービス・Play Storeの版、Android版と機種。
+- 診断画面のManifest追加もraw編集。Android17 AVD・Manager2.7.1・ART512MBでユニバーサルAPKの生成成功（最大420MB）、上書きインストール、記録→保存→照合一致を確認。アカウントなしなので会話イベントは未確認。
+- 会話の保存機能（preserve displayed replies）は修正ではないので含めない。
+
 ## 2026-11-24: Issue #9 v0.3.8（Patcher 2.5・省メモリ）
 
 - Patcher-Version 2.5.0へ移行、replaceStringsで文字列置換を集約。診断ブランチから「会話の更新要求警告」の互換処理だけを診断コード抜きで移植（Google17.72.17のみ、既定ON）。

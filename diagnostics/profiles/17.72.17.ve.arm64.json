@@ -1,0 +1,86 @@
+{
+  "packageName": "com.google.android.googlequicksearchbox",
+  "versionName": "17.72.17.ve.arm64",
+  "versionCode": "301831138",
+  "build": "0.3.9",
+  "historyUpdateReceiveMethod": "Latze;->a(Ljava/lang/Object;)V",
+  "streamUpdateReceiveMethod": "Laopx;-><init>(Lgfeh;)V",
+  "streamUpdateResponseType": "gfeh",
+  "streamUpdateThreadField": "p",
+  "streamUpdateThreadWireField": "13",
+  "streamUpdateThreadPresenceMask": "512",
+  "streamUpdateTurnField": "q",
+  "streamUpdateTurnWireField": "17",
+  "streamUpdateTurnPresenceMask": "1024",
+  "historyUpdateResponseType": "gffq",
+  "historyUpdatePuntField": "d",
+  "historyUpdatePresenceField": "b",
+  "historyUpdatePresenceMask": "1",
+  "historyUpdateRequiredBehavior": "1",
+  "historyUpdateEnglishTitle": "Conversation requires an update",
+  "historyUpdateEnglishBodyPhrase": "This conversation was created with a newer version of Gemini",
+  "puntType": "ghto",
+  "puntTitleField": "b",
+  "puntBodyField": "c",
+  "puntBehaviorField": "f",
+  "puntFields": {
+    "gffq.d": "history_response",
+    "gfeh.p": "stream_thread",
+    "gfeh.q": "stream_turn",
+    "gfnl.k": "history_turn"
+  },
+  "activity": "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/main/MainActivity;",
+  "application": "com.google.android.apps.gsa.binaries.velvet.app.VelvetMultiprocessRoot_Application",
+  "statusType": "ggmf",
+  "errorEnum": "geec",
+  "capabilitiesType": "gfcc",
+  "incomingTypes": {
+    "gffq": "parsed_history_response",
+    "gfeh": "parsed_generate_response",
+    "gfnf": "parsed_conversation_metadata",
+    "gfnl": "parsed_conversation_turn",
+    "gigv": "parsed_stream_frame",
+    "gigj": "parsed_stream_context",
+    "gihc": "parsed_stream_operation",
+    "giha": "parsed_stream_content"
+  },
+  "methods": {
+    "init": "Lwry;->onCreate()V",
+    "stream": "Laomg;->b(Lgigv;Lhiiq;)Ljava/lang/Object;",
+    "status": "Latuc;->a(Ljava/lang/Throwable;)Lggmf;",
+    "classified": "Latuf;->b(Ljava/lang/Throwable;)Ljava/lang/String;",
+    "readOnly": "Lbean;->ah(Lbdya;)V",
+    "history": "Laojo;->n(Lgffq;ZZZLhiiq;)Ljava/lang/Object;",
+    "banner": "Lbhej;->b(Ljava/lang/Object;I)V"
+  },
+  "versionFields": {
+    "Lggjj;->c:Ljava/lang/String;": "version",
+    "Lgrpe;->f:Ljava/lang/String;": "requestVersion"
+  },
+  "capabilityFields": [
+    "Lggjl;->l:Lgfcc;"
+  ],
+  "expectedSites": {
+    "init": 1,
+    "attach": 1,
+    "stream": 1,
+    "status": 1,
+    "classified": 6,
+    "readOnly": 1,
+    "capabilities": 2,
+    "version": 1,
+    "requestVersion": 5,
+    "textSet": 1685,
+    "history": 1,
+    "puntRendered": 1,
+    "handling": 4
+  },
+  "analysis": [
+    "API30 original and Store original have identical fourteen DEX files; source version/code remain guarded.",
+    "aomg.b receives gigv; the opposite outgoing stream must not be labeled as received data.",
+    "atuc.a reads grpc-status-details-bin and RobinStatus Any; ggmf.c is the wire error and ggmf.d the server message.",
+    "gfnf metadata schema matches the later gsap schema; gfnl is the corresponding native conversation-turn proto.",
+    "MainActivity receives the observer at method entry, while p0 still aliases the Activity; register counts never increase.",
+    "Manifest Application inherits onCreate through wsg -> wsa -> wsc -> wry. The wry entry initializes the observer context in every Google app process."
+  ]
+}

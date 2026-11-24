@@ -3,7 +3,7 @@ import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
 import java.util.jar.JarFile
 
 fun main(args: Array<String>) {
-    require(args.size == 2)
+    require(args.size == 2 || args.size == 3 && args[2] == "diagnostics")
     JarFile(args[0]).use { jar ->
         val manifest = jar.manifest.mainAttributes
         check(manifest.getValue("Name") == "Gemini microG patches")
@@ -32,7 +32,8 @@ fun main(args: Array<String>) {
             DexBackedDexFile.fromInputStream(Opcodes.getDefault(), it).classes.map { clazz -> clazz.type }.toSet()
         }
         check(updateTypes == setOf("Lapp/geminipatch/extension/ConversationUpdateCompatibility;")) { "Unexpected conversation runtime: $updateTypes" }
-        check(dexTypes.none { it.startsWith("Lapp/geminipatch/diagnostics/") || it.startsWith("Lapp/morphe/patches/google/diagnostics/") }) { "Diagnostics code must not be released" }
+        // Only the separate experimental diagnostic build (third argument) may carry diagnostics.
+        if (args.getOrNull(2) != "diagnostics") check(dexTypes.none { it.startsWith("Lapp/geminipatch/diagnostics/") || it.startsWith("Lapp/morphe/patches/google/diagnostics/") }) { "Diagnostics code must not be released" }
         println("MPP verified: manifest and all ${jvmTypes.size} JVM classes present in Android DEX")
     }
 }
