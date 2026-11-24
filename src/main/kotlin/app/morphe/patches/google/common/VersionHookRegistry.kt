@@ -26,6 +26,7 @@ enum class HookId(val displayName: String) {
     PROCESS_NAME_REDIRECT("プロセス名正規化"),
     MAIN_PROCESS_CHECK("アカウントストアのプロセス判定"),
     PACKAGE_CLONE_REDIRECT("クローンパッケージ参照"),
+    CONVERSATION_UPDATE_WARNING("会話の更新要求警告"),
     ACCOUNT_SWITCH_LOCK_BYPASS("無効: アカウントロック省略"),
     ACCOUNT_SYNC_LOOP_FIX("無効: Binder 成功偽装"),
     ACCOUNT_CONVERT_FALLBACK("無効: 固定 AccountId")

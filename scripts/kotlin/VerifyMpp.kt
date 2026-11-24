@@ -27,6 +27,12 @@ fun main(args: Array<String>) {
         }
         check("Lapp/geminipatch/extension/MicrogPermissions;" in runtimeTypes)
         check("Lapp/geminipatch/extension/MicrogPermissions\$PermissionDialog;" in runtimeTypes)
+        val update = checkNotNull(jar.getJarEntry("extensions/conversation-update.bin")) { "Missing conversation update runtime extension" }
+        val updateTypes = jar.getInputStream(update).buffered().use {
+            DexBackedDexFile.fromInputStream(Opcodes.getDefault(), it).classes.map { clazz -> clazz.type }.toSet()
+        }
+        check(updateTypes == setOf("Lapp/geminipatch/extension/ConversationUpdateCompatibility;")) { "Unexpected conversation runtime: $updateTypes" }
+        check(dexTypes.none { it.startsWith("Lapp/geminipatch/diagnostics/") || it.startsWith("Lapp/morphe/patches/google/diagnostics/") }) { "Diagnostics code must not be released" }
         println("MPP verified: manifest and all ${jvmTypes.size} JVM classes present in Android DEX")
     }
 }
