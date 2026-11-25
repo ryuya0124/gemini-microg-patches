@@ -15,6 +15,7 @@
 - **microGでログインしてチャット**。通常領域やSamsungセキュアフォルダで、microGに追加したGoogleアカウントを使えます。初回に権限が必要な場合は、アプリが用途を案内します。
 - **公式アプリと併用**。標準のパッチ選択でGoogleとGeminiのクローンが作成され、端末標準のGoogleアプリと並べてインストールできます。
 - **Geminiの単体APKに対応**。対応版のGeminiは分割APKをそろえずにインストールできます。
+- **回答時の振動を切り替え**。このプレビューではGeminiの設定から回答時の振動をオン／オフにできます。
 - **既存チャットの更新警告を軽減**。会話を続けるときにアプリの更新を促されるケースを減らします。
 
 ### インストール
@@ -36,6 +37,7 @@ Gemini’s work-profile restrictions limit use of the official app inside Samsun
 - **Sign in and chat with microG.** Use the Google account added to microG in your regular profile or Samsung Secure Folder. The app explains why it needs account access before requesting permission.
 - **Install alongside the official apps.** The default selection creates separate Google and Gemini clones that can coexist with the system Google app.
 - **Use a single Gemini APK.** Supported Gemini versions can be installed without their resource splits.
+- **Toggle reply vibration.** This preview adds a switch for reply vibration in Gemini settings.
 - **Reduce the update warning for existing chats.** The patches mitigate the “Conversation requires an update” warning that can interrupt some conversations.
 
 ### Installation

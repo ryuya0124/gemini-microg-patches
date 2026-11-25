@@ -244,6 +244,54 @@
       "enabled": true,
       "description": "Google (Morphe)"
     },
+    "GEMINI_HAPTICS": {
+      "className": "Lbyco;",
+      "methodName": "l",
+      "methodDescriptor": "(Laxbh;Landroidx/preference/PreferenceScreen;Lhiiq;)Ljava/lang/Object;",
+      "fieldName": null,
+      "fieldType": null,
+      "anchorStrings": [
+        "RobinSettingsPreferenceFragment: report problem feedback tap listener"
+      ],
+      "methodSignatures": [
+        "Lbspb;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbsqz;->a(Ljava/lang/Object;)Ljava/lang/Object;"
+      ],
+      "expectedMatches": 3,
+      "integers": {
+        "settingsRegisters": 21,
+        "screenParameter": 2
+      },
+      "values": {
+        "findPreference": "ah",
+        "setKey": "I",
+        "setTitle": "M",
+        "defaultField": "x",
+        "addPreference": "ae"
+      },
+      "enabled": true,
+      "description": "Add a persistent switch to the Gemini preference screen and gate the three native GpiView feedback calls."
+    },
+    "GEMINI_HAPTICS_COMPOSE": {
+      "className": "Lbxzb;",
+      "methodName": "onCreateView",
+      "methodDescriptor": "(Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Landroid/os/Bundle;)Landroid/view/View;",
+      "fieldName": null,
+      "fieldType": null,
+      "anchorStrings": [],
+      "methodSignatures": [],
+      "expectedMatches": null,
+      "integers": {
+        "registers": 11,
+        "viewRegister": 7,
+        "titleRegister": 9,
+        "geminiSettingsTitle": 2132090532,
+        "settingsTitle": 2132090545
+      },
+      "values": {},
+      "enabled": true,
+      "description": "Add the switch when the Compose fragment renders the main settings page."
+    },
     "CONVERSATION_UPDATE_WARNING": {
       "className": "Latze;",
       "methodName": "a",

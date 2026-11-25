@@ -103,6 +103,27 @@ val google177217 = AppVersionProfile(
         ),
         HookId.SPLIT_RESTRICTION_REMOVAL to TargetSpec(description = "Remove manifest split requirements; resource split still needs package rename/signing."),
         HookId.APP_LABEL_UPDATE to TargetSpec(description = "Google (Morphe)"),
+        HookId.GEMINI_HAPTICS to TargetSpec(
+            className = "Lbyco;", methodName = "l",
+            methodDescriptor = "(Laxbh;Landroidx/preference/PreferenceScreen;Lhiiq;)Ljava/lang/Object;",
+            anchorStrings = listOf("RobinSettingsPreferenceFragment: report problem feedback tap listener"),
+            methodSignatures = listOf(
+                "Lbspb;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbsqz;->a(Ljava/lang/Object;)Ljava/lang/Object;"
+            ),
+            expectedMatches = 3,
+            integers = mapOf("settingsRegisters" to 21, "screenParameter" to 2),
+            values = mapOf("findPreference" to "ah", "setKey" to "I", "setTitle" to "M",
+                "defaultField" to "x", "addPreference" to "ae"),
+            description = "Add a persistent switch to the Gemini preference screen and gate the three native GpiView feedback calls."
+        ),
+        HookId.GEMINI_HAPTICS_COMPOSE to TargetSpec(
+            className = "Lbxzb;", methodName = "onCreateView",
+            methodDescriptor = "(Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Landroid/os/Bundle;)Landroid/view/View;",
+            integers = mapOf("registers" to 11, "viewRegister" to 7, "titleRegister" to 9,
+                "geminiSettingsTitle" to 0x7f151ea4, "settingsTitle" to 0x7f151eb1),
+            description = "Add the switch when the Compose fragment renders the main settings page."
+        ),
         HookId.CONVERSATION_UPDATE_WARNING to TargetSpec(
             className = "Latze;", methodName = "a", methodDescriptor = "(Ljava/lang/Object;)V", expectedMatches = 1,
             values = mapOf("superclass" to "Lhggx;", "streamClass" to "Laopx;", "streamMethod" to "<init>", "streamDescriptor" to "(Lgfeh;)V", "streamResponse" to "Lgfeh;"),
