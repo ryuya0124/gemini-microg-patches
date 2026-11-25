@@ -6,11 +6,12 @@ Googleアプリに `Gemini haptic feedback setting` を適用すると、Gemini�
 | --- | --- |
 | Google `17.72.17.ve.arm64`（301831138） | Android 11以降のnodpi単体APK。既定のパッチ選択でAPKを生成し、Android 12と17のエミュレータで設定と振動制御を検証。パッチを外したビルドも比較。 |
 | Google `17.76.20.ve.arm64`（301838242） | Galaxyの通常領域にPlayストアが配信したbaseと4 split。既定選択で生成し、5 APKを同じ署名でインストール。Android 17でGeminiからGoogleクローンのログイン画面まで起動し、設定と振動制御を検証。 |
+| Google `17.78.14.ve.arm64`（301841514） | Google署名のnodpi単体APK（API 30以上）。Morpheの既定選択でAPKを生成。Android 12と17で旧版から同一署名で上書きして、オフ設定の継承、切り替えと再起動後の保持を確認。 |
 | Gemini `1.0.1009090390`（353） | GalaxyのPlayストア版base（API 32以上）。既定選択で単体APKを生成し、Android 17でGoogleクローンに接続。 |
 
 エミュレータ上で生成APKのAndroidX設定一覧を使い、同じ画面にスイッチが重複しないこと、初期オン、オフ、別プロセスでのオフ維持、オンに戻したときの元の振動呼び出しを確認。Compose用の追加行は、元のViewを保持し、AndroidXと同じ設定を変更することを計測用Viewで確認した。振動の測定には `View.performHapticFeedback` を記録するテスト用Viewを使った。APKのDEXには、設定登録2箇所と回答ステータスの振動3箇所に呼び出しがある。パッチ無効時は追加呼び出しが0箇所。
 
-ログイン済みのGemini設定画面、チャット、Secure Folderはこの候補ビルドで未確認。Google 17.76.20にはIssue #8の会話更新警告用の版別フックがない。最新版のGoogle 17.78.14.ve.arm64（301841514）は公開を確認したが、Macのダウンロードがサイトの確認画面で止まった。APKを取得・検証してから個別に追加する。[Google APK掲載ページ](https://www.apkmirror.com/apk/google-inc/google-search/google-app-17-78-14-release/google-app-17-78-14-ve-arm64-android-apk-download/) ・ [Gemini APK掲載ページ](https://www.apkmirror.com/apk/google-inc/google-gemini/google-gemini-1-0-1009090390-release/)
+Google 17.78.14の組み合わせは、Android 12でGemini `1.0.995038376` のAPI 29バリアント、Android 17で `1.0.1009090390` のAPI 32バリアントを使用し、両方でログイン画面に到達した。ログイン済みの設定画面、チャット、Secure Folderは未確認。Google 17.76.20と17.78.14にはIssue #8の会話更新警告用の版別フックがない。[Google APK掲載ページ](https://www.apkmirror.com/apk/google-inc/google-search/google-app-17-78-14-release/google-app-17-78-14-ve-arm64-android-apk-download/) ・ [Gemini APK掲載ページ](https://www.apkmirror.com/apk/google-inc/google-gemini/google-gemini-1-0-1009090390-release/)
 
 ## Googleの新版を追加するとき
 

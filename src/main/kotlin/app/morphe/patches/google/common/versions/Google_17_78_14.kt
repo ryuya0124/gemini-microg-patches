@@ -1,0 +1,63 @@
+package app.morphe.patches.google.common.versions
+
+import app.morphe.patches.google.common.HookId
+
+private val previous = google177620.hooks
+
+val google177814 = google177620.copy(
+    versionName = "17.78.14.ve.arm64",
+    versionCode = "301841514",
+    inputSha256 = mapOf("google-base.apk" to "f000dcd91d81a448904c0284f985b443e05f34d4f96aecb8d5f3cb6d81f121de"),
+    validation = listOf(
+        "2026-11-26: Google-signed nodpi standalone APK, minSdk 30; DexKit candidates checked against DEX",
+        "2026-11-26: default MPP applied; clone contract and haptic call sites verified",
+        "2026-11-26: API 31 and 37 emulators accepted an in-place update and retained the disabled haptic setting",
+        "2026-11-26: both emulators reached Gemini sign-in; authenticated chat and Samsung Secure Folder remain unverified"
+    ),
+    hooks = previous + mapOf(
+        HookId.DEVICE_COMPLIANCE_FEATURE to previous.getValue(HookId.DEVICE_COMPLIANCE_FEATURE).copy(
+            className = "Ldydo;"
+        ),
+        HookId.DEVICE_COMPLIANCE_REDIRECT to previous.getValue(HookId.DEVICE_COMPLIANCE_REDIRECT).copy(
+            className = "Ldydm;"
+        ),
+        HookId.WORK_PROFILE_BYPASS to previous.getValue(HookId.WORK_PROFILE_BYPASS).copy(
+            className = "Lahty;", methodName = "w",
+            methodDescriptor = "(Lcom/google/apps/tiktok/account/AccountId;Lhmwl;)Ljava/lang/Object;",
+            integers = mapOf("lookback" to 60, "branchIndex" to 135, "branchRegister" to 13,
+                "branchTargetCodeUnit" to 365, "observedRegisters" to 14),
+            description = "The guard is IF_EQZ v13 at code unit 249, immediately after the mask; the next IF_EQZ belongs to the nullable Boolean."
+        ),
+        HookId.WORK_PROFILE_ELIGIBILITY to previous.getValue(HookId.WORK_PROFILE_ELIGIBILITY).copy(
+            className = "Lapmx;", methodDescriptor = "(Lhmwl;)Ljava/lang/Object;"
+        ),
+        HookId.MICROG_RUNTIME_PERMISSIONS to previous.getValue(HookId.MICROG_RUNTIME_PERMISSIONS).copy(
+            integers = mapOf(
+                "minRegisters" to 26, "maxRegisters" to 26, "observedRegisters" to 26,
+                "activityAlias" to 0, "thisParameterOffset" to 2,
+                "scratchArray" to 6, "scratchIndex" to 7, "scratchString" to 8
+            ),
+            description = "Insert after the final IPUT_BOOLEAN o:Z at code unit 895 while v0 still contains the Activity."
+        ),
+        HookId.PROCESS_NAME_REDIRECT to previous.getValue(HookId.PROCESS_NAME_REDIRECT).copy(className = "Leolh;"),
+        HookId.MAIN_PROCESS_CHECK to previous.getValue(HookId.MAIN_PROCESS_CHECK).copy(
+            className = "Leold;",
+            description = "The anchor is in eold.a; eold.b compares the provider's result against the main process name."
+        ),
+        HookId.GMS_SIGNATURE_BYPASS to previous.getValue(HookId.GMS_SIGNATURE_BYPASS).copy(className = "Ldklf;"),
+        HookId.GMS_CERTIFICATE_VERIFIER to previous.getValue(HookId.GMS_CERTIFICATE_VERIFIER).copy(className = "Ldklg;"),
+        HookId.GEMINI_HAPTICS to previous.getValue(HookId.GEMINI_HAPTICS).copy(
+            className = "Lcbuy;",
+            methodDescriptor = "(Lawuh;Landroidx/preference/PreferenceScreen;Lhmwl;)Ljava/lang/Object;",
+            methodSignatures = listOf(
+                "Lbvku;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbvkv;->a(Ljava/lang/Object;)Ljava/lang/Object;"
+            )
+        ),
+        HookId.GEMINI_HAPTICS_COMPOSE to previous.getValue(HookId.GEMINI_HAPTICS_COMPOSE).copy(
+            className = "Lcbrj;",
+            integers = mapOf("registers" to 12, "viewRegister" to 8, "titleRegister" to 9,
+                "geminiSettingsTitle" to 0x7f151cde, "settingsTitle" to 0x7f151ceb)
+        )
+    )
+)
