@@ -1,6 +1,7 @@
 package app.morphe.patches.google.common.versions
 
 import app.morphe.patches.google.common.HookId
+import app.morphe.patches.google.common.TargetSpec
 
 private val previous = google177620.hooks
 
@@ -14,7 +15,7 @@ val google177814 = google177620.copy(
         "2026-11-26: API 31 and 37 emulators accepted an in-place update and retained the disabled haptic setting",
         "2026-11-26: both emulators reached Gemini sign-in; authenticated chat and Samsung Secure Folder remain unverified"
     ),
-    hooks = previous + mapOf(
+    hooks = previous - HookId.GEMINI_HAPTICS_COMPOSE + mapOf(
         HookId.DEVICE_COMPLIANCE_FEATURE to previous.getValue(HookId.DEVICE_COMPLIANCE_FEATURE).copy(
             className = "Ldydo;"
         ),
@@ -54,10 +55,19 @@ val google177814 = google177620.copy(
                 "Lbvkv;->a(Ljava/lang/Object;)Ljava/lang/Object;"
             )
         ),
-        HookId.GEMINI_HAPTICS_COMPOSE to previous.getValue(HookId.GEMINI_HAPTICS_COMPOSE).copy(
-            className = "Lcbrj;",
-            integers = mapOf("registers" to 12, "viewRegister" to 8, "titleRegister" to 9,
-                "geminiSettingsTitle" to 0x7f151cde, "settingsTitle" to 0x7f151ceb)
+        HookId.GEMINI_HAPTICS_SETTINGS_LIST to TargetSpec(
+            anchorStrings = listOf("RobinSettingsPreferenceFragment: watermark setting switch listener."),
+            methodSignatures = listOf(
+                "Lcbuy;->j(Landroidx/preference/PreferenceGroup;Lhmwl;)Ljava/lang/Object;",
+                "Lcbyb;->J(Landroidx/preference/PreferenceGroup;Lhmwl;)Ljava/lang/Object;"
+            ),
+            values = mapOf(
+                "composeGroup" to "cbvy", "rowsField" to "J", "keyField" to "s",
+                "persistentField" to "w", "listenerField" to "n", "listenerDescriptor" to "Lrpd;",
+                "setChecked" to "k"
+            ),
+            expectedMatches = 2,
+            description = "Insert a switch before the media watermark row in both native and Compose settings builders."
         )
     )
 )

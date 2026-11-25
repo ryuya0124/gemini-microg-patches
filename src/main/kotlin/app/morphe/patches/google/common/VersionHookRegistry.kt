@@ -32,6 +32,7 @@ enum class HookId(val displayName: String) {
     CONVERSATION_UPDATE_WARNING("会話の更新要求警告"),
     GEMINI_HAPTICS("Geminiの触覚フィードバック"),
     GEMINI_HAPTICS_COMPOSE("GeminiのCompose設定"),
+    GEMINI_HAPTICS_SETTINGS_LIST("Geminiの設定一覧"),
     ACCOUNT_SWITCH_LOCK_BYPASS("無効: アカウントロック省略"),
     ACCOUNT_SYNC_LOOP_FIX("無効: Binder 成功偽装"),
     ACCOUNT_CONVERT_FALLBACK("無効: 固定 AccountId")

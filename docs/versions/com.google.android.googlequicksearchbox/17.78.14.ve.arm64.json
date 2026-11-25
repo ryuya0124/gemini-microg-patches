@@ -272,26 +272,6 @@
       "enabled": true,
       "description": "Add a persistent switch to the Gemini preference screen and gate the three native GpiView feedback calls."
     },
-    "GEMINI_HAPTICS_COMPOSE": {
-      "className": "Lcbrj;",
-      "methodName": "onCreateView",
-      "methodDescriptor": "(Landroid/view/LayoutInflater;Landroid/view/ViewGroup;Landroid/os/Bundle;)Landroid/view/View;",
-      "fieldName": null,
-      "fieldType": null,
-      "anchorStrings": [],
-      "methodSignatures": [],
-      "expectedMatches": null,
-      "integers": {
-        "registers": 12,
-        "viewRegister": 8,
-        "titleRegister": 9,
-        "geminiSettingsTitle": 2132090078,
-        "settingsTitle": 2132090091
-      },
-      "values": {},
-      "enabled": true,
-      "description": "Add the switch when the Compose fragment renders the main settings page."
-    },
     "ACCOUNT_SWITCH_LOCK_BYPASS": {
       "className": null,
       "methodName": null,
@@ -340,6 +320,33 @@
       "values": {},
       "enabled": false,
       "description": "Historical unverified helper name. Fixed AccountId=1 broke token acquisition; never use for a new version."
+    },
+    "GEMINI_HAPTICS_SETTINGS_LIST": {
+      "className": null,
+      "methodName": null,
+      "methodDescriptor": null,
+      "fieldName": null,
+      "fieldType": null,
+      "anchorStrings": [
+        "RobinSettingsPreferenceFragment: watermark setting switch listener."
+      ],
+      "methodSignatures": [
+        "Lcbuy;->j(Landroidx/preference/PreferenceGroup;Lhmwl;)Ljava/lang/Object;",
+        "Lcbyb;->J(Landroidx/preference/PreferenceGroup;Lhmwl;)Ljava/lang/Object;"
+      ],
+      "expectedMatches": 2,
+      "integers": {},
+      "values": {
+        "composeGroup": "cbvy",
+        "rowsField": "J",
+        "keyField": "s",
+        "persistentField": "w",
+        "listenerField": "n",
+        "listenerDescriptor": "Lrpd;",
+        "setChecked": "k"
+      },
+      "enabled": true,
+      "description": "Insert a switch before the media watermark row in both native and Compose settings builders."
     }
   }
 }
