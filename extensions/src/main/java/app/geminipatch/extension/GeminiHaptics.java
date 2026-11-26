@@ -49,9 +49,10 @@ public final class GeminiHaptics {
                     .newInstance(context, null);
             preference.getMethod(member[1], String.class).invoke(toggle, KEY);
             preference.getMethod(member[2], CharSequence.class).invoke(toggle, title(context));
-            readField(preference, member[3]).set(toggle, isEnabled(context));
-            bindListener(preference, toggle, member[5], context);
-            group.getMethod(member[4], preference).invoke(screen, toggle);
+            readField(preference, member[5]).setBoolean(toggle, false);
+            switchType.getMethod(member[6], boolean.class).invoke(toggle, isEnabled(context));
+            bindListener(preference, toggle, member[4], context);
+            group.getMethod(member[3], preference).invoke(screen, toggle);
         } catch (ReflectiveOperationException | RuntimeException e) {
             Log.w("GeminiPatch", "Cannot add the haptic feedback setting", e);
         }

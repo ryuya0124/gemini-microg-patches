@@ -55,12 +55,34 @@ val google177814 = google177620.copy(
                 "Lbvkv;->a(Ljava/lang/Object;)Ljava/lang/Object;",
                 "Lbvkc;->a(Lbvju;)V",
                 "Lbvnq;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+                "Lbvns;->c(Landroid/view/View;Z)V",
+                "Lcbfv;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
                 "Lbvuj;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
                 "Lbpza;->i(Lbpzm;Landroid/graphics/Point;Lhmyt;Laytl;Lbisc;)Z",
                 "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->g(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhmtm;",
-                "Lcfkf;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;"
+                "Lcfkf;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lcfkh;->f()V",
+                "Lcfkh;->g()V",
+                // Guided prompt interactions.
+                "Lcbch;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lcbcl;->invoke()Ljava/lang/Object;",
+                "Lcbct;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lcbda;->invoke()Ljava/lang/Object;",
+                "Lcbdy;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lcbea;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lcbeb;->invoke(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lcbek;->invoke()Ljava/lang/Object;",
+                // Home and suggested prompt interactions.
+                "Lbwwv;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbwxv;->invoke()Ljava/lang/Object;",
+                "Lbwyk;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbwym;->invoke()Ljava/lang/Object;",
+                "Lbwyo;->invoke()Ljava/lang/Object;",
+                "Lbwyw;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbwzs;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lchip;->invoke()Ljava/lang/Object;"
             ),
-            expectedMatches = 14
+            expectedMatches = 39
         ),
         HookId.GEMINI_HAPTICS_VIBRATOR to TargetSpec(
             anchorStrings = listOf("Ma-HapticsPlayer-Impl", "Playing haptic feedback"),

@@ -112,14 +112,25 @@ val google177217 = AppVersionProfile(
                 "Lbsqz;->a(Ljava/lang/Object;)Ljava/lang/Object;",
                 "Lbsoj;->a(Lbsob;)V",
                 "Lbsrw;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+                "Lbsry;->c(Landroid/view/View;Z)V",
+                "Lbxru;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
                 "Lbsym;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
                 "Lbnsq;->i(Lbntb;Landroid/graphics/Point;Lhikx;Layqg;Lbhvo;)Z",
-                "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->f(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhifr;"
+                "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->f(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhifr;",
+                // Guided prompt interactions.
+                "Lbxoe;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbxoi;->invoke()Ljava/lang/Object;",
+                "Lbxoq;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbxox;->invoke()Ljava/lang/Object;",
+                "Lbxpx;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbxpz;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbxqa;->invoke(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbxqj;->invoke()Ljava/lang/Object;"
             ),
-            expectedMatches = 13,
+            expectedMatches = 28,
             integers = mapOf("settingsRegisters" to 21, "screenParameter" to 2),
             values = mapOf("findPreference" to "ah", "setKey" to "I", "setTitle" to "M",
-                "defaultField" to "x", "addPreference" to "ae", "listenerField" to "n"),
+                "addPreference" to "ae", "listenerField" to "n", "persistentField" to "w", "setChecked" to "j"),
             description = "Gate Gemini view feedback from floaty controls, image tools and other verified Gemini surfaces."
         ),
         HookId.GEMINI_HAPTICS_VIBRATOR to TargetSpec(

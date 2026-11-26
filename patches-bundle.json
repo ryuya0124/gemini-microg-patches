@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-26T10:42:16",
-  "description": "Preview with Gemini chat and interaction vibration controls",
-  "download_url": "https://github.com/ryuya0124/gemini-microg-patches/releases/download/v0.3.11-haptics.2/gemini-microg-patches-0.3.11-haptics.2.mpp",
-  "page_url": "https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.11-haptics.2",
-  "version": "0.3.11-haptics.2"
+  "created_at": "2026-11-26T11:08:44",
+  "description": "Gemini vibration controls for all five supported Google versions",
+  "download_url": "https://github.com/ryuya0124/gemini-microg-patches/releases/download/v0.3.11-haptics.3/gemini-microg-patches-0.3.11-haptics.3.mpp",
+  "page_url": "https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.11-haptics.3",
+  "version": "0.3.11-haptics.3"
 }

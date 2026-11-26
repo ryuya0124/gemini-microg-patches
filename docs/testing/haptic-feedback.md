@@ -1,5 +1,27 @@
 # Geminiの触覚フィードバック
 
+## v0.3.11-haptics.3候補
+
+パッチ集の対応表を確認し、Google 17.54.18・17.70.11にも「Geminiの振動」を追加した。17.54.18はAndroidXの設定構築、17.70.11はAndroidXとComposeの設定構築を照合した。AndroidXのスイッチは、全版で波形再生と同じ保存値から表示を初期化する。
+
+フローティングボタンの表示切り替え、ガイド付きプロンプト、Gemini内のデバッグ通知にも振動呼び出しがあった。17.76.20と17.78.14は、ホーム画面の候補プロンプト・シート操作と `YourDay` の追加2経路も確認した。プロンプトの処理は、リソース名と呼出元から機能を特定し、各版の命令列・引数・呼び出し個数を照合した。
+
+| Google | 波形再生 | Viewフィードバック | エミュレータ |
+| --- | ---: | ---: | --- |
+| 17.54.18 | 4 | 23 | Android 12・17 |
+| 17.70.11 | 4 | 28 | Android 17 |
+| 17.72.17 | 4 | 28 | Android 12・17 |
+| 17.76.20 | 4 | 37 | Android 17 |
+| 17.78.14 | 4 | 39 | Android 12・17 |
+
+同じMPPの標準選択でGoogle 5版とGeminiランチャー3版を生成し、出力DEXで上表の呼び出し数を照合した。Android 17では5組ともGeminiランチャーからサインイン画面に到達した。Android 12では17.72.17と17.78.14をランチャー1.0.995038376（API 29のバリアント）と組み合わせ、17.54.18はGoogle側の振動設定と抑止を単独で試験した。今回のランチャー1.0.958859967と1.0.1009090390はAPI 32以上を要求する。ランチャー3版と17.76.20の機能splitで対象の振動APIの直接呼び出しは見つからなかった。
+
+エミュレータで振動のオフ、プロセス再起動後の保持、再オンを確認した。Android 17の17.78.14では、送信・回答開始・回答完了のイベントクラスを使ってアプリ本来の波形処理を実行した。Androidの振動サービスへの要求は、旧版オフで計3件、候補版オフで0件、候補版オンで計3件だった。
+
+調査対象は `performHapticFeedback`、`Vibrator`、`VibratorManager`、`VibrationEffect`、音声由来の振動API。確認できたGemini専用の呼び出しを対象にした。Googleの共有機能、キーボード、OS各自の振動はそれぞれの設定に従う。ログイン後の実チャット、Live、画像編集など個々の操作の実通信を伴う試験は、公開前に残っている。
+
+入力のAPKと監査証跡は `~/Documents/GeminiPatch-haptics/local/haptics-route-audit/` と旧版の検証フォルダ。候補のビルド、出力DEXの照合、Android 12・17の実行ログは `~/Documents/GeminiPatch-haptics-followup/local/full-audit/`。同フォルダの `build-audit-apks.sh`、`run-haptics-audit.sh`、`verify-haptics-playback.sh` で再確認できる。
+
 ## v0.3.11-haptics.2候補
 
 Issue #8では、スイッチをオフにしても送信・考え中・回答完了に振動する場面が報告された。v0.3.11-haptics.1の3箇所はフローティング表示の `GpiView` 経路だった。各Google APKで通常チャットの入力コントローラと回答状態から波形再生までを追跡した。17.78.14では `submit_elapsed_realtime` のあるメソッドと `QueryAnswerStarted`、`QueryAnswered` が同じプレイヤーを呼ぶ。

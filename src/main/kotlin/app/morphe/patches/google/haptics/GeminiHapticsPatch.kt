@@ -45,9 +45,9 @@ val geminiHapticsPatch = bytecodePatch(
             }
         }
         check(preference.fields.any { it.name == "j" && it.type == "Landroid/content/Context;" })
-        check(preference.fields.any { it.name == spec.value("defaultField") && it.type == "Ljava/lang/Object;" })
 
-        val listSpec = VersionHookRegistry.requireProfile(packageMetadata).hooks[HookId.GEMINI_HAPTICS_SETTINGS_LIST]
+        val hooks = VersionHookRegistry.requireProfile(packageMetadata).hooks
+        val listSpec = hooks[HookId.GEMINI_HAPTICS_SETTINGS_LIST]
         if (listSpec == null) {
             val settingsClass = mutableClassDefBy(classDefBy(requireNotNull(spec.className)))
             val settings = settingsClass.methods.single { spec.matches(it) }
@@ -55,7 +55,10 @@ val geminiHapticsPatch = bytecodePatch(
             check(classDefBy(listener.type).methods.any {
                 it.parameterTypes == listOf(PREFERENCE, "Ljava/lang/Object;") && it.returnType == "Z"
             }) { "Gemini preference change listener changed" }
-            val names = listOf("findPreference", "setKey", "setTitle", "defaultField", "addPreference", "listenerField")
+            check(preference.fields.any { it.name == spec.value("persistentField") && it.type == "Z" })
+            val state = classDefBy("Landroidx/preference/TwoStatePreference;")
+            check(state.methods.any { it.shortDescriptor() == "${spec.value("setChecked")}(Z)V" })
+            val names = listOf("findPreference", "setKey", "setTitle", "addPreference", "listenerField", "persistentField", "setChecked")
                 .joinToString(",") { spec.value(it) }
             check(settings.implementation?.registerCount == spec.int("settingsRegisters"))
             val screenParameter = spec.int("screenParameter")
@@ -66,7 +69,9 @@ val geminiHapticsPatch = bytecodePatch(
                 invoke-static {v1, v0}, $RUNTIME->addPreference(Ljava/lang/Object;Ljava/lang/String;)V
             """.trimIndent())
 
-            val compose = VersionHookRegistry.target(HookId.GEMINI_HAPTICS_COMPOSE, packageMetadata)
+        }
+
+        hooks[HookId.GEMINI_HAPTICS_COMPOSE]?.let { compose ->
             val composeOwner = mutableClassDefBy(classDefBy(requireNotNull(compose.className)))
             val createView = composeOwner.methods.single { compose.matches(it) }
             val viewRegister = compose.int("viewRegister")
@@ -90,7 +95,9 @@ val geminiHapticsPatch = bytecodePatch(
                 move-result-object v$viewRegister
                 return-object v$viewRegister
             """.trimIndent())
-        } else {
+        }
+
+        if (listSpec != null) {
             val composeGroup = classDefBy("L${listSpec.value("composeGroup")};")
             check(composeGroup.superclass == group.type)
             check(composeGroup.fields.any { it.name == listSpec.value("rowsField") && it.type == "Ljava/util/List;" })

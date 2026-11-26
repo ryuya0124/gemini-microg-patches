@@ -258,11 +258,21 @@
         "Lbsqz;->a(Ljava/lang/Object;)Ljava/lang/Object;",
         "Lbsoj;->a(Lbsob;)V",
         "Lbsrw;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+        "Lbsry;->c(Landroid/view/View;Z)V",
+        "Lbxru;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
         "Lbsym;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
         "Lbnsq;->i(Lbntb;Landroid/graphics/Point;Lhikx;Layqg;Lbhvo;)Z",
-        "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->f(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhifr;"
+        "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->f(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhifr;",
+        "Lbxoe;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbxoi;->invoke()Ljava/lang/Object;",
+        "Lbxoq;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbxox;->invoke()Ljava/lang/Object;",
+        "Lbxpx;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbxpz;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbxqa;->invoke(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbxqj;->invoke()Ljava/lang/Object;"
       ],
-      "expectedMatches": 13,
+      "expectedMatches": 28,
       "integers": {
         "settingsRegisters": 21,
         "screenParameter": 2
@@ -271,9 +281,10 @@
         "findPreference": "ah",
         "setKey": "I",
         "setTitle": "M",
-        "defaultField": "x",
         "addPreference": "ae",
-        "listenerField": "n"
+        "listenerField": "n",
+        "persistentField": "w",
+        "setChecked": "j"
       },
       "enabled": true,
       "description": "Gate Gemini view feedback from floaty controls, image tools and other verified Gemini surfaces."
