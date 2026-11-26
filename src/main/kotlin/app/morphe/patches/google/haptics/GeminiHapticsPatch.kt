@@ -32,6 +32,9 @@ val geminiHapticsPatch = bytecodePatch(
     execute {
         val spec = VersionHookRegistry.target(HookId.GEMINI_HAPTICS, packageMetadata)
         val preference = classDefBy(PREFERENCE)
+        val setIcon = preference.methods.single {
+            it.parameterTypes == listOf("Landroid/graphics/drawable/Drawable;") && it.returnType == "V"
+        }.name
         val group = classDefBy("Landroidx/preference/PreferenceGroup;")
         val switch = classDefBy("Landroidx/preference/SwitchPreferenceCompat;")
         val methods = listOf(
@@ -61,7 +64,7 @@ val geminiHapticsPatch = bytecodePatch(
             val state = classDefBy("Landroidx/preference/TwoStatePreference;")
             check(state.methods.any { it.shortDescriptor() == "${spec.value("setChecked")}(Z)V" })
             val names = listOf("findPreference", "setKey", "setTitle", "addPreference", "listenerField", "persistentField", "setChecked")
-                .joinToString(",") { spec.value(it) }
+                .map(spec::value).plus(setIcon).joinToString(",")
             check(settings.implementation?.registerCount == spec.int("settingsRegisters"))
             val screenParameter = spec.int("screenParameter")
             check(settings.parameterTypes[screenParameter - 1] == "Landroidx/preference/PreferenceScreen;")
@@ -112,7 +115,7 @@ val geminiHapticsPatch = bytecodePatch(
             check(state.methods.any { it.shortDescriptor() == "${listSpec.value("setChecked")}(Z)V" })
             val names = (listOf("findPreference", "setKey", "setTitle").map(spec::value) +
                 listOf("composeGroup", "rowsField", "keyField", "persistentField", "listenerField", "setChecked").map(listSpec::value) +
-                spec.value("addPreference")).joinToString(",")
+                listOf(spec.value("addPreference"), setIcon)).joinToString(",")
             check(listSpec.methodSignatures.size == listSpec.expectedMatches)
             for (descriptor in listSpec.methodSignatures) {
                 val owner = mutableClassDefBy(classDefBy(descriptor.substringBefore("->")))

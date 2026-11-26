@@ -1,5 +1,11 @@
 # Geminiの触覚フィードバック
 
+## v0.3.11-haptics.5候補
+
+「Geminiの振動」と「Googleアプリの振動」の左に、Issue #8で提案されたスマートフォンと振動線のアイコンを表示する。24dpを基準に描画し、色は端末の明暗テーマに合わせる。AndroidX・新しいCompose一覧では設定行のDrawableとして登録し、従来のCompose画面ではスイッチの先頭に置く。 [アイコン提案](https://github.com/ryuya0124/gemini-microg-patches/issues/8#issuecomment-7198884894)
+
+Android 17でGoogle全5版、Android 12で対応する3版を検証した。各設定経路で両方のアイコンのサイズと描画を確認し、ライト・ダークのテーマで色の切り替えを確認した。2つのスイッチの独立動作と再起動後の保持も再確認した。証跡はMacの `~/Documents/GeminiPatch-haptics-followup/local/icon-audit/`。ログイン済み実機の設定画面は未確認。
+
 ## v0.3.11-haptics.4候補
 
 Geminiの設定に「Geminiの振動」と「Googleアプリの振動」を表示する。どちらも既定はオンで、以前のGeminiの設定値を引き継ぐ。Google側は別のアプリ内ファイルに保存し、別プロセスでも同じ値を参照する。Androidの振動権限は5版すべてで維持した。

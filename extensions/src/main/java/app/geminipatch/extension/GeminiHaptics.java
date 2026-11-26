@@ -3,6 +3,14 @@ package app.geminipatch.extension;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.system.ErrnoException;
@@ -58,6 +66,7 @@ public final class GeminiHaptics {
             Method find = group.getMethod(member[0], String.class);
             Method setKey = preference.getMethod(member[1], String.class);
             Method setTitle = preference.getMethod(member[2], CharSequence.class);
+            Method setIcon = preference.getMethod(member[member.length - 1], Drawable.class);
             Field persistent = readField(preference, member[list ? 6 : 5]);
             Field listener = readField(preference, member[list ? 7 : 4]);
             Method checked = switchType.getMethod(member[list ? 8 : 6], boolean.class);
@@ -71,6 +80,7 @@ public final class GeminiHaptics {
                 Object toggle = constructor.newInstance(context, null);
                 setKey.invoke(toggle, key);
                 setTitle.invoke(toggle, title(context, key));
+                setIcon.invoke(toggle, vibrationIcon(context));
                 persistent.setBoolean(toggle, false);
                 checked.invoke(toggle, isEnabled(context, key));
                 listener.set(toggle, Proxy.newProxyInstance(loader, new Class<?>[] { listener.getType() },
@@ -135,6 +145,8 @@ public final class GeminiHaptics {
         for (String key : SETTINGS) {
             Switch toggle = new Switch(context);
             toggle.setText(title(context, key));
+            toggle.setCompoundDrawablesRelativeWithIntrinsicBounds(vibrationIcon(context), null, null, null);
+            toggle.setCompoundDrawablePadding(Math.round(12 * density));
             toggle.setChecked(isEnabled(context, key));
             toggle.setMinHeight(Math.round(48 * density));
             toggle.setPaddingRelative(horizontalPadding, 0, horizontalPadding, 0);
@@ -144,6 +156,48 @@ public final class GeminiHaptics {
             layout.addView(toggle, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         }
         return layout;
+    }
+
+    private static Drawable vibrationIcon(Context context) {
+        Resources resources = context.getResources();
+        int size = Math.round(24 * resources.getDisplayMetrics().density);
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        bitmap.setDensity(resources.getDisplayMetrics().densityDpi);
+
+        TypedArray colors = context.obtainStyledAttributes(new int[] { android.R.attr.textColorSecondary });
+        int color;
+        try {
+            color = colors.getColor(0, Color.GRAY);
+        } finally {
+            colors.recycle();
+        }
+        Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
+        stroke.setColor(color);
+        stroke.setStyle(Paint.Style.STROKE);
+        stroke.setStrokeWidth(2);
+        stroke.setStrokeCap(Paint.Cap.ROUND);
+        stroke.setStrokeJoin(Paint.Join.ROUND);
+
+        Canvas canvas = new Canvas(bitmap);
+        canvas.scale(size / 24f, size / 24f);
+        canvas.drawRoundRect(7, 3, 17, 21, 2, 2, stroke);
+
+        // Phone outline and mirrored vibration lines from the design proposed in Issue #8.
+        Path wave = new Path();
+        wave.moveTo(2, 6);
+        wave.lineTo(3.06051f, 7.11942f);
+        wave.cubicTo(3.58133f, 7.66918f, 3.56352f, 8.53546f, 3.02055f, 9.06335f);
+        wave.lineTo(3, 9.08333f);
+        wave.cubicTo(2.45233f, 9.61579f, 2.45233f, 10.4953f, 3, 11.0278f);
+        wave.cubicTo(3.54767f, 11.5602f, 3.54767f, 12.4398f, 3, 12.9722f);
+        wave.cubicTo(2.45233f, 13.5047f, 2.45233f, 14.3842f, 3, 14.9167f);
+        wave.lineTo(3.02055f, 14.9366f);
+        wave.cubicTo(3.56351f, 15.4645f, 3.58132f, 16.3308f, 3.0605f, 16.8806f);
+        wave.lineTo(2, 18);
+        canvas.drawPath(wave, stroke);
+        canvas.scale(-1, 1, 12, 12);
+        canvas.drawPath(wave, stroke);
+        return new BitmapDrawable(resources, bitmap);
     }
 
     private static final class ToggleBinding
