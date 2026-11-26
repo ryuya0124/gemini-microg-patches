@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-26T11:08:44",
-  "description": "Gemini vibration controls for all five supported Google versions",
-  "download_url": "https://github.com/ryuya0124/gemini-microg-patches/releases/download/v0.3.11-haptics.3/gemini-microg-patches-0.3.11-haptics.3.mpp",
-  "page_url": "https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.11-haptics.3",
-  "version": "0.3.11-haptics.3"
+  "created_at": "2026-11-26T11:40:55",
+  "description": "Separate vibration controls for Gemini and the Google app",
+  "download_url": "https://github.com/ryuya0124/gemini-microg-patches/releases/download/v0.3.11-haptics.4/gemini-microg-patches-0.3.11-haptics.4.mpp",
+  "page_url": "https://github.com/ryuya0124/gemini-microg-patches/releases/tag/v0.3.11-haptics.4",
+  "version": "0.3.11-haptics.4"
 }

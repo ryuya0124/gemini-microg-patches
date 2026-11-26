@@ -8,8 +8,10 @@ import app.morphe.patches.google.common.HookId
 import app.morphe.patches.google.common.VersionHookRegistry
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
@@ -20,7 +22,7 @@ private const val WAVEFORM_ARGS = "(Landroid/os/Vibrator;Landroid/os/VibrationEf
 
 val geminiHapticsPatch = bytecodePatch(
     name = "Gemini haptic feedback setting",
-    description = "Adds a Gemini settings switch for send, thinking, completion and other Gemini haptics.",
+    description = "Adds separate vibration switches for Gemini and the Google app, including Search and Lens.",
     default = true
 ) {
     compatibleWith(*VersionHookRegistry.compatibility("com.google.android.googlequicksearchbox", hook = HookId.GEMINI_HAPTICS))
@@ -172,7 +174,53 @@ val geminiHapticsPatch = bytecodePatch(
             method.replaceInstruction(index,
                 "invoke-static {v${registers.registerC}, v${registers.registerD}}, $RUNTIME->performVibration$WAVEFORM_ARGS")
         }
+
+        // Gemini calls have already been redirected above. The remaining Google APK
+        // call sites include Search and Lens, even when the concrete class name is obfuscated.
+        var googleCalls = 0
+        classDefForEach { owner ->
+            if (owner.type.startsWith("Lapp/geminipatch/extension/")) return@classDefForEach
+            if (owner.methods.none { method ->
+                method.implementation?.instructions?.any { it.googleHapticTarget() != null } == true
+            }) return@classDefForEach
+            for (method in mutableClassDefBy(owner).methods) {
+                for ((index, instruction) in method.implementation?.instructions.orEmpty().withIndex().toList()) {
+                    val target = instruction.googleHapticTarget() ?: continue
+                    val invocation = when (instruction) {
+                        is FiveRegisterInstruction -> {
+                            check(instruction.registerCount in 2..3)
+                            val registers = listOf(instruction.registerC, instruction.registerD, instruction.registerE)
+                                .take(instruction.registerCount).joinToString(", ") { "v$it" }
+                            "invoke-static {$registers}"
+                        }
+                        is RegisterRangeInstruction -> {
+                            val end = instruction.startRegister + instruction.registerCount - 1
+                            "invoke-static/range {v${instruction.startRegister} .. v$end}"
+                        }
+                        else -> error("Unexpected haptic invocation: $instruction")
+                    }
+                    method.replaceInstruction(index, "$invocation, $RUNTIME->$target")
+                    googleCalls++
+                }
+            }
+        }
+        check(googleCalls > 0) { "No Google app haptic call sites found" }
     }
 }
 
 private fun MethodReference.shortDescriptor() = "$name(${parameterTypes.joinToString("")})$returnType"
+
+private fun Instruction.googleHapticTarget(): String? {
+    if (opcode != Opcode.INVOKE_VIRTUAL && opcode != Opcode.INVOKE_VIRTUAL_RANGE) return null
+    val reference = (this as ReferenceInstruction).reference as MethodReference
+    if (reference.name != "performHapticFeedback" && reference.name != "vibrate") return null
+    return when (reference.shortDescriptor()) {
+        "performHapticFeedback(I)Z" -> "performGoogleFeedback(Landroid/view/View;I)Z"
+        "performHapticFeedback(II)Z" -> "performGoogleFeedback(Landroid/view/View;II)Z"
+        "vibrate(J)V" -> if (reference.definingClass == "Landroid/os/Vibrator;")
+            "performGoogleVibration(Landroid/os/Vibrator;J)V" else null
+        "vibrate(Landroid/os/VibrationEffect;)V" -> if (reference.definingClass == "Landroid/os/Vibrator;")
+            "performGoogleVibration$WAVEFORM_ARGS" else null
+        else -> null
+    }
+}

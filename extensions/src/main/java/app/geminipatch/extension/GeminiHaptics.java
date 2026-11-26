@@ -20,89 +20,82 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
 
-/** Gemini view feedback and the waveform player share one app-private setting. */
+/** Independent app-private controls for Gemini and Google app feedback. */
 public final class GeminiHaptics {
-    private static final String KEY = "geminipatch_haptic_feedback";
-    private static final String STATE_FILE = KEY + ".state";
+    private static final String GEMINI = "geminipatch_haptic_feedback";
+    private static final String GOOGLE = "geminipatch_google_haptic_feedback";
+    private static final String[] SETTINGS = { GEMINI, GOOGLE };
     private static volatile Context application;
 
     private GeminiHaptics() {}
 
     public static void addPreference(Object screen, String names) {
-        if (screen == null) return;
-        try {
-            String[] member = names.split(",", -1);
-            ClassLoader loader = screen.getClass().getClassLoader();
-            Class<?> preference = loader.loadClass("androidx.preference.Preference");
-            Class<?> group = loader.loadClass("androidx.preference.PreferenceGroup");
-            if (group.getMethod(member[0], String.class).invoke(screen, KEY) != null) return;
-
-            Context context = (Context) readField(preference, "j").get(screen);
-            Class<?> switchType = loader.loadClass("androidx.preference.SwitchPreferenceCompat");
-            Object toggle = switchType.getConstructor(Context.class, AttributeSet.class)
-                    .newInstance(context, null);
-            preference.getMethod(member[1], String.class).invoke(toggle, KEY);
-            preference.getMethod(member[2], CharSequence.class).invoke(toggle, title(context));
-            readField(preference, member[5]).setBoolean(toggle, false);
-            switchType.getMethod(member[6], boolean.class).invoke(toggle, isEnabled(context));
-            bindListener(preference, toggle, member[4], context);
-            group.getMethod(member[3], preference).invoke(screen, toggle);
-        } catch (ReflectiveOperationException | RuntimeException e) {
-            Log.w("GeminiPatch", "Cannot add the haptic feedback setting", e);
-        }
+        addPreferences(screen, names, false);
     }
 
     /** Both settings builders consume AndroidX preferences, including the Compose list adapter. */
     public static void addListPreference(Object screen, String names) {
+        addPreferences(screen, names, true);
+    }
+
+    private static void addPreferences(Object screen, String names, boolean list) {
         if (screen == null) return;
         try {
             String[] member = names.split(",", -1);
             ClassLoader loader = screen.getClass().getClassLoader();
             Class<?> preference = loader.loadClass("androidx.preference.Preference");
             Class<?> group = loader.loadClass("androidx.preference.PreferenceGroup");
-            if (member[3].equals(screen.getClass().getName())) {
-                Field keyField = readField(preference, member[5]);
-                List<?> rows = (List<?>) readField(screen.getClass(), member[4]).get(screen);
-                for (Object row : rows) {
-                    if (KEY.equals(keyField.get(row))) return;
-                }
-            } else if (group.getMethod(member[0], String.class).invoke(screen, KEY) != null) {
-                return;
-            }
-
             Context context = (Context) readField(preference, "j").get(screen);
             Class<?> switchType = loader.loadClass("androidx.preference.SwitchPreferenceCompat");
-            Object toggle = switchType.getConstructor(Context.class, AttributeSet.class)
-                    .newInstance(context, null);
-            preference.getMethod(member[1], String.class).invoke(toggle, KEY);
-            preference.getMethod(member[2], CharSequence.class).invoke(toggle, title(context));
-            readField(preference, member[6]).setBoolean(toggle, false);
-            switchType.getMethod(member[8], boolean.class).invoke(toggle, isEnabled(context));
-            bindListener(preference, toggle, member[7], context);
-            group.getMethod(member[9], preference).invoke(screen, toggle);
+            Constructor<?> constructor = switchType.getConstructor(Context.class, AttributeSet.class);
+            Method find = group.getMethod(member[0], String.class);
+            Method setKey = preference.getMethod(member[1], String.class);
+            Method setTitle = preference.getMethod(member[2], CharSequence.class);
+            Field persistent = readField(preference, member[list ? 6 : 5]);
+            Field listener = readField(preference, member[list ? 7 : 4]);
+            Method checked = switchType.getMethod(member[list ? 8 : 6], boolean.class);
+            Method add = group.getMethod(member[list ? 9 : 3], preference);
+            boolean composeList = list && member[3].equals(screen.getClass().getName());
+            Field keyField = composeList ? readField(preference, member[5]) : null;
+            List<?> rows = composeList ? (List<?>) readField(screen.getClass(), member[4]).get(screen) : null;
+
+            for (String key : SETTINGS) {
+                if (composeList ? containsKey(rows, keyField, key) : find.invoke(screen, key) != null) continue;
+                Object toggle = constructor.newInstance(context, null);
+                setKey.invoke(toggle, key);
+                setTitle.invoke(toggle, title(context, key));
+                persistent.setBoolean(toggle, false);
+                checked.invoke(toggle, isEnabled(context, key));
+                listener.set(toggle, Proxy.newProxyInstance(loader, new Class<?>[] { listener.getType() },
+                        new SaveSwitchValue(context, key)));
+                add.invoke(screen, toggle);
+            }
         } catch (ReflectiveOperationException | RuntimeException e) {
             Log.w("GeminiPatch", "Cannot add the vibration setting to Gemini settings", e);
         }
     }
 
-    private static void bindListener(Class<?> preference, Object toggle, String name, Context context)
-            throws ReflectiveOperationException {
-        Field listener = readField(preference, name);
-        listener.set(toggle, Proxy.newProxyInstance(preference.getClassLoader(),
-                new Class<?>[] { listener.getType() }, new SaveSwitchValue(context)));
+    private static boolean containsKey(List<?> rows, Field keyField, String key) throws IllegalAccessException {
+        for (Object row : rows) {
+            if (key.equals(keyField.get(row))) return true;
+        }
+        return false;
     }
 
     private static final class SaveSwitchValue implements InvocationHandler {
         private final Context context;
+        private final String key;
 
-        SaveSwitchValue(Context context) {
+        SaveSwitchValue(Context context, String key) {
             this.context = context;
+            this.key = key;
         }
 
         @Override public Object invoke(Object proxy, Method method, Object[] args) {
@@ -114,7 +107,7 @@ public final class GeminiHaptics {
                 }
             }
             if (args == null || args.length != 2 || !(args[1] instanceof Boolean)) return false;
-            return saveEnabled(context, (Boolean) args[1]);
+            return saveEnabled(context, key, (Boolean) args[1]);
         }
     }
 
@@ -137,17 +130,19 @@ public final class GeminiHaptics {
         if (params != null) layout.setLayoutParams(params);
         layout.addView(content, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
-        Switch toggle = new Switch(context);
-        toggle.setText(title(context));
-        toggle.setChecked(isEnabled(context));
         float density = context.getResources().getDisplayMetrics().density;
         int horizontalPadding = Math.round(16 * density);
-        toggle.setMinHeight(Math.round(48 * density));
-        toggle.setPaddingRelative(horizontalPadding, 0, horizontalPadding, 0);
-        ToggleBinding binding = new ToggleBinding(toggle, horizontalPadding);
-        toggle.setOnCheckedChangeListener(binding);
-        layout.setOnApplyWindowInsetsListener(binding);
-        layout.addView(toggle, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        for (String key : SETTINGS) {
+            Switch toggle = new Switch(context);
+            toggle.setText(title(context, key));
+            toggle.setChecked(isEnabled(context, key));
+            toggle.setMinHeight(Math.round(48 * density));
+            toggle.setPaddingRelative(horizontalPadding, 0, horizontalPadding, 0);
+            ToggleBinding binding = new ToggleBinding(toggle, horizontalPadding, key);
+            toggle.setOnCheckedChangeListener(binding);
+            if (GOOGLE.equals(key)) layout.setOnApplyWindowInsetsListener(binding);
+            layout.addView(toggle, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
         return layout;
     }
 
@@ -155,16 +150,18 @@ public final class GeminiHaptics {
             implements CompoundButton.OnCheckedChangeListener, View.OnApplyWindowInsetsListener {
         private final Switch toggle;
         private final int padding;
+        private final String key;
 
-        ToggleBinding(Switch toggle, int padding) {
+        ToggleBinding(Switch toggle, int padding, String key) {
             this.toggle = toggle;
             this.padding = padding;
+            this.key = key;
         }
 
         @Override public void onCheckedChanged(CompoundButton button, boolean enabled) {
-            if (!saveEnabled(button.getContext(), enabled)) {
+            if (!saveEnabled(button.getContext(), key, enabled)) {
                 toggle.setOnCheckedChangeListener(null);
-                toggle.setChecked(isEnabled(button.getContext()));
+                toggle.setChecked(isEnabled(button.getContext(), key));
                 toggle.setOnCheckedChangeListener(this);
             }
         }
@@ -183,7 +180,15 @@ public final class GeminiHaptics {
     }
 
     public static boolean performFeedback(View view, int effect) {
-        return isEnabled(view.getContext()) && view.performHapticFeedback(effect);
+        return isEnabled(view.getContext(), GEMINI) && view.performHapticFeedback(effect);
+    }
+
+    public static boolean performGoogleFeedback(View view, int effect) {
+        return isEnabled(view.getContext(), GOOGLE) && view.performHapticFeedback(effect);
+    }
+
+    public static boolean performGoogleFeedback(View view, int effect, int flags) {
+        return isEnabled(view.getContext(), GOOGLE) && view.performHapticFeedback(effect, flags);
     }
 
     public static void setApplicationContext(Context context) {
@@ -191,26 +196,38 @@ public final class GeminiHaptics {
     }
 
     public static void performVibration(Vibrator vibrator, VibrationEffect effect) {
-        Context context = application;
-        if (context == null || isEnabled(context)) vibrator.vibrate(effect);
+        if (isVibrationEnabled(GEMINI)) vibrator.vibrate(effect);
     }
 
-    private static boolean isEnabled(Context context) {
-        try (FileInputStream input = context.openFileInput(STATE_FILE)) {
+    public static void performGoogleVibration(Vibrator vibrator, VibrationEffect effect) {
+        if (isVibrationEnabled(GOOGLE)) vibrator.vibrate(effect);
+    }
+
+    public static void performGoogleVibration(Vibrator vibrator, long duration) {
+        if (isVibrationEnabled(GOOGLE)) vibrator.vibrate(duration);
+    }
+
+    private static boolean isVibrationEnabled(String key) {
+        Context context = application;
+        return context == null || isEnabled(context, key);
+    }
+
+    private static boolean isEnabled(Context context, String key) {
+        try (FileInputStream input = context.openFileInput(key + ".state")) {
             int state = input.read();
             if (state == 0 || state == 1) return state == 1;
         } catch (FileNotFoundException ignored) {
             // Preserve the user's setting from builds that used SharedPreferences alone.
         } catch (IOException e) {
-            Log.w("GeminiPatch", "Cannot read the Gemini vibration setting", e);
+            Log.w("GeminiPatch", "Cannot read the vibration setting", e);
         }
-        return preferences(context).getBoolean(KEY, true);
+        return preferences(context).getBoolean(key, true);
     }
 
-    private static boolean saveEnabled(Context context, boolean enabled) {
+    private static boolean saveEnabled(Context context, String key, boolean enabled) {
         File temporary = null;
         try {
-            File destination = context.getFileStreamPath(STATE_FILE);
+            File destination = context.getFileStreamPath(key + ".state");
             temporary = File.createTempFile("gemini-haptics-", ".tmp", destination.getParentFile());
             try (FileOutputStream output = new FileOutputStream(temporary)) {
                 output.write(enabled ? 1 : 0);
@@ -218,10 +235,10 @@ public final class GeminiHaptics {
             }
             // Other processes only open the final path, so they never cache or read a partial value.
             Os.rename(temporary.getAbsolutePath(), destination.getAbsolutePath());
-            preferences(context).edit().putBoolean(KEY, enabled).apply();
+            preferences(context).edit().putBoolean(key, enabled).apply();
             return true;
         } catch (IOException | ErrnoException e) {
-            Log.w("GeminiPatch", "Cannot save the Gemini vibration setting", e);
+            Log.w("GeminiPatch", "Cannot save the vibration setting", e);
             return false;
         } finally {
             if (temporary != null) temporary.delete();
@@ -232,7 +249,8 @@ public final class GeminiHaptics {
         return context.getSharedPreferences(context.getPackageName() + "_preferences", Context.MODE_PRIVATE);
     }
 
-    private static String title(Context context) {
+    private static String title(Context context, String key) {
+        if (GOOGLE.equals(key)) return isJapanese(context) ? "Googleアプリの振動" : "Google app vibration";
         return isJapanese(context) ? "Geminiの振動" : "Gemini vibration";
     }
 

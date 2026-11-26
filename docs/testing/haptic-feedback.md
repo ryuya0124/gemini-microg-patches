@@ -1,5 +1,21 @@
 # Geminiの触覚フィードバック
 
+## v0.3.11-haptics.4候補
+
+Geminiの設定に「Geminiの振動」と「Googleアプリの振動」を表示する。どちらも既定はオンで、以前のGeminiの設定値を引き継ぐ。Google側は別のアプリ内ファイルに保存し、別プロセスでも同じ値を参照する。Androidの振動権限は5版すべてで維持した。
+
+先にGeminiの版別呼び出しを付け替え、残りのGoogle APKから `View.performHapticFeedback` と `Vibrator.vibrate` の呼び出しをGoogle側のスイッチにつないだ。17.78.14の出力DEXで、Google検索のAIモードの入力送信、Lensのテキスト選択とメイン画面のフィードバックがGoogle側を通ることを確認した。
+
+| Google | GeminiのView | Geminiの波形 | GoogleのView | Googleの直接再生 |
+| --- | ---: | ---: | ---: | ---: |
+| 17.54.18 | 23 | 4 | 43 | 3 |
+| 17.70.11 | 28 | 4 | 41 | 3 |
+| 17.72.17 | 28 | 4 | 41 | 3 |
+| 17.76.20 | 37 | 4 | 42 | 2 |
+| 17.78.14 | 39 | 4 | 44 | 2 |
+
+Android 17で全5版、Android 12でインストール可能な17.54.18・17.72.17・17.78.14を検証した。計測用Viewと波形呼び出しで、Geminiだけオフ、Googleだけオフ、両方オンを切り替え、それぞれの状態がプロセスの再起動後も読めることを確認した。17.78.14のGemini・Googleそれぞれの実際の波形再生処理に3パルスを入力し、振動サービスへの要求が各オフで0件、オンで3件になることを確認した。Google検索・Lensの各画面での実操作と物理端末での振動は未確認。MPPとログはMacの `~/Documents/GeminiPatch-haptics-followup/local/split-switch-audit/` とビルド出力 `build/release/` に保存。
+
 ## v0.3.11-haptics.3候補
 
 パッチ集の対応表を確認し、Google 17.54.18・17.70.11にも「Geminiの振動」を追加した。17.54.18はAndroidXの設定構築、17.70.11はAndroidXとComposeの設定構築を照合した。AndroidXのスイッチは、全版で波形再生と同じ保存値から表示を初期化する。
