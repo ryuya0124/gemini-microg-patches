@@ -2,6 +2,8 @@
 
 microGを使い、通常領域とSamsungセキュアフォルダでGeminiを動かすためのMorpheパッチ集です。GoogleアプリとGeminiランチャーを別パッケージとして構築します。
 
+[GitHub（開発元）](https://github.com/ryuya0124/gemini-microg-patches) · [GitLab（公開ミラー）](https://gitlab.com/ryuya0124/gemini-microg-patches)
+
 **最新の実機確認:** Google `17.72.17.ve.arm64`、Gemini `1.0.995038376`、パッチ `v0.3.2`。2026-11-12にSM-S948Q／Android17のセキュアフォルダuser150へ既存署名・データを保持して更新し、ユーザーがログイン状態の維持とチャット返答を確認。microGは既存環境を維持。通常領域は新版で未再検証。
 
 ## Setup / installation (English)
