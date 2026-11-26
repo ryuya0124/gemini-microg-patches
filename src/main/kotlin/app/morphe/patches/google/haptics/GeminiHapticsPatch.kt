@@ -15,10 +15,12 @@ import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 private const val RUNTIME = "Lapp/geminipatch/extension/GeminiHaptics;"
 private const val PREFERENCE = "Landroidx/preference/Preference;"
+private const val GOOGLE_APPLICATION = "Lcom/google/android/apps/gsa/binaries/velvet/app/VelvetMultiprocessRoot_Application;"
+private const val WAVEFORM_ARGS = "(Landroid/os/Vibrator;Landroid/os/VibrationEffect;)V"
 
 val geminiHapticsPatch = bytecodePatch(
     name = "Gemini haptic feedback setting",
-    description = "Adds a switch to turn Gemini reply haptics on or off from Gemini settings.",
+    description = "Adds a Gemini settings switch for send, thinking, completion and other Gemini haptics.",
     default = true
 ) {
     compatibleWith(*VersionHookRegistry.compatibility("com.google.android.googlequicksearchbox", hook = HookId.GEMINI_HAPTICS))
@@ -49,7 +51,11 @@ val geminiHapticsPatch = bytecodePatch(
         if (listSpec == null) {
             val settingsClass = mutableClassDefBy(classDefBy(requireNotNull(spec.className)))
             val settings = settingsClass.methods.single { spec.matches(it) }
-            val names = listOf("findPreference", "setKey", "setTitle", "defaultField", "addPreference")
+            val listener = preference.fields.single { it.name == spec.value("listenerField") }
+            check(classDefBy(listener.type).methods.any {
+                it.parameterTypes == listOf(PREFERENCE, "Ljava/lang/Object;") && it.returnType == "Z"
+            }) { "Gemini preference change listener changed" }
+            val names = listOf("findPreference", "setKey", "setTitle", "defaultField", "addPreference", "listenerField")
                 .joinToString(",") { spec.value(it) }
             check(settings.implementation?.registerCount == spec.int("settingsRegisters"))
             val screenParameter = spec.int("screenParameter")
@@ -117,9 +123,10 @@ val geminiHapticsPatch = bytecodePatch(
             val owner = mutableClassDefBy(classDefBy(descriptor.substringBefore("->")))
             val method = owner.methods.single { it.shortDescriptor() == descriptor.substringAfter("->") }
             val calls = method.instructions.withIndex().filter { (_, instruction) ->
-                instruction.opcode == Opcode.INVOKE_VIRTUAL &&
-                    (instruction as? ReferenceInstruction)?.reference.toString()
-                        .endsWith("/GpiView;->performHapticFeedback(I)Z")
+                val reference = (instruction as? ReferenceInstruction)?.reference as? MethodReference
+                instruction.opcode == Opcode.INVOKE_VIRTUAL && reference?.shortDescriptor() == "performHapticFeedback(I)Z" &&
+                    (reference.definingClass == "Landroid/view/View;" ||
+                        reference.definingClass.startsWith("Lcom/google/android/apps/search/assistant/surfaces/voice/robin/"))
             }
             check(calls.isNotEmpty()) { "Gemini reply haptics changed: $descriptor" }
             for ((index, instruction) in calls) {
@@ -131,6 +138,33 @@ val geminiHapticsPatch = bytecodePatch(
             }
         }
         check(wrapped == spec.expectedMatches) { "Expected ${spec.expectedMatches} Gemini haptic calls, wrapped $wrapped" }
+
+        val application = mutableClassDefBy(classDefBy(GOOGLE_APPLICATION))
+        val constructor = application.methods.single { it.shortDescriptor() == "<init>()V" }
+        val superConstructor = constructor.instructions.withIndex().single { (_, instruction) ->
+            (instruction as? ReferenceInstruction)?.reference?.toString() == "${application.superclass}-><init>()V"
+        }
+        constructor.addInstructions(superConstructor.index + 1,
+            "invoke-static/range {p0 .. p0}, $RUNTIME->setApplicationContext(Landroid/content/Context;)V")
+
+        val waveform = VersionHookRegistry.target(HookId.GEMINI_HAPTICS_VIBRATOR, packageMetadata)
+        check(waveform.methodSignatures.size == waveform.expectedMatches)
+        for ((position, descriptor) in waveform.methodSignatures.withIndex()) {
+            val owner = mutableClassDefBy(classDefBy(descriptor.substringBefore("->")))
+            val method = owner.methods.single { it.shortDescriptor() == descriptor.substringAfter("->") }
+            if (position == 0) {
+                val references = method.instructions.mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }.toSet()
+                check(waveform.anchorStrings.all { it in references }) { "Gemini waveform player changed: $descriptor" }
+            }
+            val (index, instruction) = method.instructions.withIndex().single { (_, instruction) ->
+                instruction.opcode == Opcode.INVOKE_STATIC &&
+                    (instruction as? ReferenceInstruction)?.reference?.toString() == waveform.value("vibrateReference")
+            }
+            val registers = instruction as FiveRegisterInstruction
+            check(registers.registerCount == 2)
+            method.replaceInstruction(index,
+                "invoke-static {v${registers.registerC}, v${registers.registerD}}, $RUNTIME->performVibration$WAVEFORM_ARGS")
+        }
     }
 }
 

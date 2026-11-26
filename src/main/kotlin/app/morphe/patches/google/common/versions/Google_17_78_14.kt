@@ -52,8 +52,28 @@ val google177814 = google177620.copy(
             methodDescriptor = "(Lawuh;Landroidx/preference/PreferenceScreen;Lhmwl;)Ljava/lang/Object;",
             methodSignatures = listOf(
                 "Lbvku;->a(Ljava/lang/Object;)Ljava/lang/Object;",
-                "Lbvkv;->a(Ljava/lang/Object;)Ljava/lang/Object;"
-            )
+                "Lbvkv;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbvkc;->a(Lbvju;)V",
+                "Lbvnq;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+                "Lbvuj;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+                "Lbpza;->i(Lbpzm;Landroid/graphics/Point;Lhmyt;Laytl;Lbisc;)Z",
+                "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->g(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhmtm;",
+                "Lcfkf;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;"
+            ),
+            expectedMatches = 14
+        ),
+        HookId.GEMINI_HAPTICS_VIBRATOR to TargetSpec(
+            anchorStrings = listOf("Ma-HapticsPlayer-Impl", "Playing haptic feedback"),
+            methodSignatures = listOf(
+                "Latuo;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbnvg;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbnvj;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lavmz;->b(Lavmp;Lhmwl;)Ljava/lang/Object;"
+            ),
+            values = mapOf("vibrateReference" to
+                "Lavk\$\$ExternalSyntheticApiModelOutline0;->m(Landroid/os/Vibrator;Landroid/os/VibrationEffect;)V"),
+            expectedMatches = 4,
+            description = "Gate the chat waveform player plus Live and Gemini feedback-report cues."
         ),
         HookId.GEMINI_HAPTICS_SETTINGS_LIST to TargetSpec(
             anchorStrings = listOf("RobinSettingsPreferenceFragment: watermark setting switch listener."),

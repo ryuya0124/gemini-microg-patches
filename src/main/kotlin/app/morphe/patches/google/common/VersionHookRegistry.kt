@@ -31,6 +31,7 @@ enum class HookId(val displayName: String) {
     PACKAGE_CLONE_REDIRECT("クローンパッケージ参照"),
     CONVERSATION_UPDATE_WARNING("会話の更新要求警告"),
     GEMINI_HAPTICS("Geminiの触覚フィードバック"),
+    GEMINI_HAPTICS_VIBRATOR("Geminiの波形振動"),
     GEMINI_HAPTICS_COMPOSE("GeminiのCompose設定"),
     GEMINI_HAPTICS_SETTINGS_LIST("Geminiの設定一覧"),
     ACCOUNT_SWITCH_LOCK_BYPASS("無効: アカウントロック省略"),

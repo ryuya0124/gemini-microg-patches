@@ -1,5 +1,31 @@
 # Geminiの触覚フィードバック
 
+## v0.3.11-haptics.2候補
+
+Issue #8では、スイッチをオフにしても送信・考え中・回答完了に振動する場面が報告された。v0.3.11-haptics.1の3箇所はフローティング表示の `GpiView` 経路だった。各Google APKで通常チャットの入力コントローラと回答状態から波形再生までを追跡した。17.78.14では `submit_elapsed_realtime` のあるメソッドと `QueryAnswerStarted`、`QueryAnswered` が同じプレイヤーを呼ぶ。
+
+| Google | 波形プレイヤーの呼出元 | 置き換えた波形再生 | 置き換えたView呼び出し |
+| --- | --- | ---: | ---: |
+| 17.72.17.ve.arm64 | `Laupm;->a(Laupj;)V` | 4 | 13 |
+| 17.76.20.ve.arm64 | `Lataj;->a(Latag;)V` | 4 | 14 |
+| 17.78.14.ve.arm64 | `Latup;->a(Latum;)V` | 4 | 14 |
+
+波形側の4箇所はチャット用の共通プレイヤー、Liveの音声セッション2箇所、Gemini内の問題報告。共通プレイヤーには長押しで話す操作や入力ツールからの呼び出しもある。View側はフローティング表示の状態・全画面化・ドラッグ、画像の長押しと編集。17.76.20・17.78.14には `YourDay` の呼び出しも含む。元のGeminiランチャー345・353のDEXでは、今回対象とした振動APIの直接呼び出しは0件だった。
+
+設定名は「Geminiの振動」。保存時はプロセス共通のアプリ内ファイルをアトミックに置き換え、振動時は最新値を読む。旧版の保存値も初回から引き継ぐ。Androidの `SharedPreferences` は複数プロセスでの使用をサポートしていない。 [Androidの仕様](https://developer.android.com/reference/android/content/SharedPreferences)
+
+Morpheの標準選択で3版を生成し、出力DEXで上表の呼び出し数を照合した。Android 12と17で旧設定の移行、オフ時の画面・波形再生の抑止、プロセス再起動後の保持、再オンを確認した。17.76.20の分割版はAndroid 17で確認した。AndroidXと旧Composeの両経路を試し、17.78.14では設定一覧のリスナーを実行した。
+
+Android 17・Google 17.78.14の比較では、送信・回答開始・回答完了のイベントクラスを使い、アプリ本来の波形再生処理にテスト波形を渡した。`dumpsys vibrator_manager` の要求数は旧版オフで3、候補版オフで0、候補版オンで3だった。再実行用の `verify-haptics-playback.sh` と結果は `local/followup/` に保存した。
+
+ログイン済みの実チャットで3場面を送信し、振動サービスの要求を比較する試験が公開前に残っている。今回のエミュレータはサインイン画面まで。Google検索、Lens、IME、OS由来の振動はGeminiのスイッチの制御範囲外。
+
+### 次版での追跡
+
+`scripts/discover-hooks.sh APK` の `gemini_haptics_waveform_player` と `gemini_haptics_answer_events` でプレイヤーと回答イベントを見つける。入力側の `submit_elapsed_realtime` からプレイヤーへの呼び出しも照合する。`performHapticFeedback`、`Vibrator`、`VibrationEffect` を列挙し、Geminiの画面やサービスに属することを文字列・リソース・呼出元から確認して版別プロファイルを更新する。Macの監査証跡は `~/Documents/GeminiPatch-haptics/local/haptics-route-audit/`、候補のビルドと検証結果は `~/Documents/GeminiPatch-haptics-followup/local/followup/`。
+
+## v0.3.11-haptics.1の記録
+
 Googleアプリに `Gemini haptic feedback setting` を適用すると、Geminiの設定から回答時の振動を切り替えられる。Google 17.78.14では「メディアの透かしを表示する」の直前に「回答時の振動」を表示する。AndroidX版とCompose版は同じ端末内設定を使う。17.72.17・17.76.20の表示名は「触覚フィードバック」で、Compose版では設定画面下部に表示する。既定はオン。オフにすると回答に伴うステータス表示の振動が止まる。Geminiランチャーの再パッチが必要になるのは、ランチャー自体を新版にする場合。
 
 | 入力 | 2026-11-26 JSTの確認範囲 |

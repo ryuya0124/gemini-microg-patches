@@ -109,13 +109,31 @@ val google177217 = AppVersionProfile(
             anchorStrings = listOf("RobinSettingsPreferenceFragment: report problem feedback tap listener"),
             methodSignatures = listOf(
                 "Lbspb;->a(Ljava/lang/Object;)Ljava/lang/Object;",
-                "Lbsqz;->a(Ljava/lang/Object;)Ljava/lang/Object;"
+                "Lbsqz;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbsoj;->a(Lbsob;)V",
+                "Lbsrw;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+                "Lbsym;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+                "Lbnsq;->i(Lbntb;Landroid/graphics/Point;Lhikx;Layqg;Lbhvo;)Z",
+                "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->f(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhifr;"
             ),
-            expectedMatches = 3,
+            expectedMatches = 13,
             integers = mapOf("settingsRegisters" to 21, "screenParameter" to 2),
             values = mapOf("findPreference" to "ah", "setKey" to "I", "setTitle" to "M",
-                "defaultField" to "x", "addPreference" to "ae"),
-            description = "Add a persistent switch to the Gemini preference screen and gate the three native GpiView feedback calls."
+                "defaultField" to "x", "addPreference" to "ae", "listenerField" to "n"),
+            description = "Gate Gemini view feedback from floaty controls, image tools and other verified Gemini surfaces."
+        ),
+        HookId.GEMINI_HAPTICS_VIBRATOR to TargetSpec(
+            anchorStrings = listOf("Ma-HapticsPlayer-Impl", "Playing haptic feedback"),
+            methodSignatures = listOf(
+                "Laupl;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lblsj;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lblsm;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lavwy;->b(Lavwo;Lhiiq;)Ljava/lang/Object;"
+            ),
+            values = mapOf("vibrateReference" to
+                "Lbv\$\$ExternalSyntheticApiModelOutline0;->m(Landroid/os/Vibrator;Landroid/os/VibrationEffect;)V"),
+            expectedMatches = 4,
+            description = "Gate the chat waveform player plus Live and Gemini feedback-report cues."
         ),
         HookId.GEMINI_HAPTICS_COMPOSE to TargetSpec(
             className = "Lbxzb;", methodName = "onCreateView",

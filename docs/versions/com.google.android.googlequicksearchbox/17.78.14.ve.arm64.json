@@ -255,9 +255,15 @@
       ],
       "methodSignatures": [
         "Lbvku;->a(Ljava/lang/Object;)Ljava/lang/Object;",
-        "Lbvkv;->a(Ljava/lang/Object;)Ljava/lang/Object;"
+        "Lbvkv;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbvkc;->a(Lbvju;)V",
+        "Lbvnq;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+        "Lbvuj;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+        "Lbpza;->i(Lbpzm;Landroid/graphics/Point;Lhmyt;Laytl;Lbisc;)Z",
+        "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->g(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhmtm;",
+        "Lcfkf;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;"
       ],
-      "expectedMatches": 3,
+      "expectedMatches": 14,
       "integers": {
         "settingsRegisters": 21,
         "screenParameter": 2
@@ -267,10 +273,35 @@
         "setKey": "I",
         "setTitle": "K",
         "defaultField": "x",
-        "addPreference": "ab"
+        "addPreference": "ab",
+        "listenerField": "n"
       },
       "enabled": true,
-      "description": "Add a persistent switch to the Gemini preference screen and gate the three native GpiView feedback calls."
+      "description": "Gate Gemini view feedback from floaty controls, image tools and other verified Gemini surfaces."
+    },
+    "GEMINI_HAPTICS_VIBRATOR": {
+      "className": null,
+      "methodName": null,
+      "methodDescriptor": null,
+      "fieldName": null,
+      "fieldType": null,
+      "anchorStrings": [
+        "Ma-HapticsPlayer-Impl",
+        "Playing haptic feedback"
+      ],
+      "methodSignatures": [
+        "Latuo;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbnvg;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lbnvj;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+        "Lavmz;->b(Lavmp;Lhmwl;)Ljava/lang/Object;"
+      ],
+      "expectedMatches": 4,
+      "integers": {},
+      "values": {
+        "vibrateReference": "Lavk$$ExternalSyntheticApiModelOutline0;->m(Landroid/os/Vibrator;Landroid/os/VibrationEffect;)V"
+      },
+      "enabled": true,
+      "description": "Gate the chat waveform player plus Live and Gemini feedback-report cues."
     },
     "ACCOUNT_SWITCH_LOCK_BYPASS": {
       "className": null,

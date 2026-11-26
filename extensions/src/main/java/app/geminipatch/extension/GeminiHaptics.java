@@ -3,6 +3,10 @@ package app.geminipatch.extension;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.system.ErrnoException;
+import android.system.Os;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -11,15 +15,22 @@ import android.view.WindowInsets;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.Switch;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
 
-/** Settings in both layouts use the same app-private preference key. */
+/** Gemini view feedback and the waveform player share one app-private setting. */
 public final class GeminiHaptics {
     private static final String KEY = "geminipatch_haptic_feedback";
+    private static final String STATE_FILE = KEY + ".state";
+    private static volatile Context application;
 
     private GeminiHaptics() {}
 
@@ -38,7 +49,8 @@ public final class GeminiHaptics {
                     .newInstance(context, null);
             preference.getMethod(member[1], String.class).invoke(toggle, KEY);
             preference.getMethod(member[2], CharSequence.class).invoke(toggle, title(context));
-            readField(preference, member[3]).set(toggle, Boolean.TRUE);
+            readField(preference, member[3]).set(toggle, isEnabled(context));
+            bindListener(preference, toggle, member[5], context);
             group.getMethod(member[4], preference).invoke(screen, toggle);
         } catch (ReflectiveOperationException | RuntimeException e) {
             Log.w("GeminiPatch", "Cannot add the haptic feedback setting", e);
@@ -68,25 +80,28 @@ public final class GeminiHaptics {
             Object toggle = switchType.getConstructor(Context.class, AttributeSet.class)
                     .newInstance(context, null);
             preference.getMethod(member[1], String.class).invoke(toggle, KEY);
-            preference.getMethod(member[2], CharSequence.class)
-                    .invoke(toggle, isJapanese(context) ? "回答時の振動" : "Reply vibration");
+            preference.getMethod(member[2], CharSequence.class).invoke(toggle, title(context));
             readField(preference, member[6]).setBoolean(toggle, false);
-            SharedPreferences prefs = preferences(context);
-            switchType.getMethod(member[8], boolean.class).invoke(toggle, prefs.getBoolean(KEY, true));
-            Field listener = readField(preference, member[7]);
-            listener.set(toggle, Proxy.newProxyInstance(loader, new Class<?>[] { listener.getType() },
-                    new SaveSwitchValue(prefs)));
+            switchType.getMethod(member[8], boolean.class).invoke(toggle, isEnabled(context));
+            bindListener(preference, toggle, member[7], context);
             group.getMethod(member[9], preference).invoke(screen, toggle);
         } catch (ReflectiveOperationException | RuntimeException e) {
             Log.w("GeminiPatch", "Cannot add the vibration setting to Gemini settings", e);
         }
     }
 
-    private static final class SaveSwitchValue implements InvocationHandler {
-        private final SharedPreferences prefs;
+    private static void bindListener(Class<?> preference, Object toggle, String name, Context context)
+            throws ReflectiveOperationException {
+        Field listener = readField(preference, name);
+        listener.set(toggle, Proxy.newProxyInstance(preference.getClassLoader(),
+                new Class<?>[] { listener.getType() }, new SaveSwitchValue(context)));
+    }
 
-        SaveSwitchValue(SharedPreferences prefs) {
-            this.prefs = prefs;
+    private static final class SaveSwitchValue implements InvocationHandler {
+        private final Context context;
+
+        SaveSwitchValue(Context context) {
+            this.context = context;
         }
 
         @Override public Object invoke(Object proxy, Method method, Object[] args) {
@@ -98,8 +113,7 @@ public final class GeminiHaptics {
                 }
             }
             if (args == null || args.length != 2 || !(args[1] instanceof Boolean)) return false;
-            prefs.edit().putBoolean(KEY, (Boolean) args[1]).apply();
-            return true;
+            return saveEnabled(context, (Boolean) args[1]);
         }
     }
 
@@ -124,7 +138,7 @@ public final class GeminiHaptics {
 
         Switch toggle = new Switch(context);
         toggle.setText(title(context));
-        toggle.setChecked(preferences(context).getBoolean(KEY, true));
+        toggle.setChecked(isEnabled(context));
         float density = context.getResources().getDisplayMetrics().density;
         int horizontalPadding = Math.round(16 * density);
         toggle.setMinHeight(Math.round(48 * density));
@@ -147,7 +161,11 @@ public final class GeminiHaptics {
         }
 
         @Override public void onCheckedChanged(CompoundButton button, boolean enabled) {
-            preferences(button.getContext()).edit().putBoolean(KEY, enabled).apply();
+            if (!saveEnabled(button.getContext(), enabled)) {
+                toggle.setOnCheckedChangeListener(null);
+                toggle.setChecked(isEnabled(button.getContext()));
+                toggle.setOnCheckedChangeListener(this);
+            }
         }
 
         @Override public WindowInsets onApplyWindowInsets(View layout, WindowInsets insets) {
@@ -164,8 +182,49 @@ public final class GeminiHaptics {
     }
 
     public static boolean performFeedback(View view, int effect) {
-        return preferences(view.getContext()).getBoolean(KEY, true)
-                && view.performHapticFeedback(effect);
+        return isEnabled(view.getContext()) && view.performHapticFeedback(effect);
+    }
+
+    public static void setApplicationContext(Context context) {
+        application = context;
+    }
+
+    public static void performVibration(Vibrator vibrator, VibrationEffect effect) {
+        Context context = application;
+        if (context == null || isEnabled(context)) vibrator.vibrate(effect);
+    }
+
+    private static boolean isEnabled(Context context) {
+        try (FileInputStream input = context.openFileInput(STATE_FILE)) {
+            int state = input.read();
+            if (state == 0 || state == 1) return state == 1;
+        } catch (FileNotFoundException ignored) {
+            // Preserve the user's setting from builds that used SharedPreferences alone.
+        } catch (IOException e) {
+            Log.w("GeminiPatch", "Cannot read the Gemini vibration setting", e);
+        }
+        return preferences(context).getBoolean(KEY, true);
+    }
+
+    private static boolean saveEnabled(Context context, boolean enabled) {
+        File temporary = null;
+        try {
+            File destination = context.getFileStreamPath(STATE_FILE);
+            temporary = File.createTempFile("gemini-haptics-", ".tmp", destination.getParentFile());
+            try (FileOutputStream output = new FileOutputStream(temporary)) {
+                output.write(enabled ? 1 : 0);
+                output.getFD().sync();
+            }
+            // Other processes only open the final path, so they never cache or read a partial value.
+            Os.rename(temporary.getAbsolutePath(), destination.getAbsolutePath());
+            preferences(context).edit().putBoolean(KEY, enabled).apply();
+            return true;
+        } catch (IOException | ErrnoException e) {
+            Log.w("GeminiPatch", "Cannot save the Gemini vibration setting", e);
+            return false;
+        } finally {
+            if (temporary != null) temporary.delete();
+        }
     }
 
     private static SharedPreferences preferences(Context context) {
@@ -173,7 +232,7 @@ public final class GeminiHaptics {
     }
 
     private static String title(Context context) {
-        return isJapanese(context) ? "触覚フィードバック" : "Haptic feedback";
+        return isJapanese(context) ? "Geminiの振動" : "Gemini vibration";
     }
 
     private static boolean isJapanese(Context context) {

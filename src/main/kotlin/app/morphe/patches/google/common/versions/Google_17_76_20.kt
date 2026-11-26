@@ -1,6 +1,7 @@
 package app.morphe.patches.google.common.versions
 
 import app.morphe.patches.google.common.HookId
+import app.morphe.patches.google.common.TargetSpec
 
 private val previous = google177217.hooks
 
@@ -54,10 +55,30 @@ val google177620 = google177217.copy(
             methodDescriptor = "(Lavyc;Landroidx/preference/PreferenceScreen;Lhist;)Ljava/lang/Object;",
             methodSignatures = listOf(
                 "Lbtmy;->a(Ljava/lang/Object;)Ljava/lang/Object;",
-                "Lbtow;->a(Ljava/lang/Object;)Ljava/lang/Object;"
+                "Lbtow;->a(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbtmg;->a(Lbtly;)V",
+                "Lbtpt;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+                "Lbtwo;->onScroll(Landroid/view/MotionEvent;Landroid/view/MotionEvent;FF)Z",
+                "Lbohr;->i(Lboid;Landroid/graphics/Point;Lhivb;Laxvh;Lbhqj;)Z",
+                "Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;->g(Lcom/google/android/apps/search/assistant/surfaces/voice/robin/ui/extensions/mediagen/editor/ui/views/EditorCanvasView;)Lhipw;",
+                "Lcdqz;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;"
             ),
+            expectedMatches = 14,
             values = mapOf("findPreference" to "ae", "setKey" to "I", "setTitle" to "K",
-                "defaultField" to "x", "addPreference" to "ab")
+                "defaultField" to "x", "addPreference" to "ab", "listenerField" to "n")
+        ),
+        HookId.GEMINI_HAPTICS_VIBRATOR to TargetSpec(
+            anchorStrings = listOf("Ma-HapticsPlayer-Impl", "Playing haptic feedback"),
+            methodSignatures = listOf(
+                "Latai;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbmfg;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Lbmfj;->invokeSuspend(Ljava/lang/Object;)Ljava/lang/Object;",
+                "Laurp;->b(Laurf;Lhist;)Ljava/lang/Object;"
+            ),
+            values = mapOf("vibrateReference" to
+                "Lbv\$\$ExternalSyntheticApiModelOutline0;->m(Landroid/os/Vibrator;Landroid/os/VibrationEffect;)V"),
+            expectedMatches = 4,
+            description = "Gate the chat waveform player plus Live and Gemini feedback-report cues."
         ),
         HookId.GEMINI_HAPTICS_COMPOSE to previous.getValue(HookId.GEMINI_HAPTICS_COMPOSE).copy(
             className = "Lcabq;",
