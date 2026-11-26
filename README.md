@@ -8,7 +8,7 @@
 
 ## 日本語
 
-microGを使い、Androidの通常領域やSamsungセキュアフォルダでGeminiにログインするためのMorpheパッチ集です。Geminiランチャー、パッチ済みGoogleアプリ、microGを同じプロファイルにインストールします。
+標準のGeminiアプリは、Samsungのセキュアフォルダ内では仕事用プロファイル向けの利用制限にかかります。このMorpheパッチ集を使うと、セキュアフォルダ内でもmicroG経由でGeminiにログインしてチャットできます。Geminiランチャー、パッチ済みGoogleアプリ、microGを同じプロファイルにインストールします。
 
 ### できること
 
@@ -16,7 +16,6 @@ microGを使い、Androidの通常領域やSamsungセキュアフォルダでGem
 - **公式アプリと併用**。標準のパッチ選択でGoogleとGeminiのクローンが作成され、端末標準のGoogleアプリと並べてインストールできます。
 - **Geminiの単体APKに対応**。対応版のGeminiは分割APKをそろえずにインストールできます。
 - **既存チャットの更新警告を軽減**。会話を続けるときにアプリの更新を促されるケースを減らします。
-- **単体Google APKのパッチ処理を軽量化**。v0.3.8から、パッチ適用時に必要なメモリを削減しました。
 
 ### インストール
 
@@ -30,7 +29,7 @@ GitLabから追加する場合は、上のJSONのリンク先を **Sources → R
 
 ## English
 
-Morphe patches for signing in to Gemini with microG on Android, including Samsung Secure Folder. Install the Gemini launcher, the patched Google app, and microG in the same Android profile.
+Gemini’s work-profile restrictions limit use of the official app inside Samsung Secure Folder. These Morphe patches let you sign in and chat with Gemini inside Secure Folder using microG. Install the Gemini launcher, the patched Google app, and microG in the same Android profile.
 
 ### What the patches do
 
@@ -38,7 +37,6 @@ Morphe patches for signing in to Gemini with microG on Android, including Samsun
 - **Install alongside the official apps.** The default selection creates separate Google and Gemini clones that can coexist with the system Google app.
 - **Use a single Gemini APK.** Supported Gemini versions can be installed without their resource splits.
 - **Reduce the update warning for existing chats.** The patches mitigate the “Conversation requires an update” warning that can interrupt some conversations.
-- **Patch the single Google APK with less memory.** This improvement is available starting with v0.3.8.
 
 ### Installation
 
