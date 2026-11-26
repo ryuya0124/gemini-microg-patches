@@ -2,6 +2,10 @@
 
 [日本語](#日本語) · [English](#english) · [GitHub](https://github.com/ryuya0124/gemini-microg-patches) · [GitLab mirror](https://gitlab.com/ryuya0124/gemini-microg-patches)
 
+[![Morphe Managerに追加 / Add to Morphe Manager](docs/assets/add-to-morphe-manager.svg)](https://morphe.software/add-source?github=ryuya0124/gemini-microg-patches)
+
+[GitLabミラーの登録用JSON / GitLab mirror source JSON](https://gitlab.com/ryuya0124/gemini-microg-patches/-/raw/mirror-feed/patches-bundle.json)
+
 ## 日本語
 
 microGを使い、Androidの通常領域やSamsungセキュアフォルダでGeminiにログインするためのMorpheパッチ集です。Geminiランチャー、パッチ済みGoogleアプリ、microGを同じプロファイルにインストールします。
@@ -16,7 +20,7 @@ microGを使い、Androidの通常領域やSamsungセキュアフォルダでGem
 
 ### インストール
 
-1. **Morphe Manager 2.7.1以降**を用意し、安定版のパッチソースを追加します。[GitHubからMorpheに追加](https://morphe.software/add-source?github=ryuya0124/gemini-microg-patches) · [GitLabの登録用JSON](https://gitlab.com/ryuya0124/gemini-microg-patches/-/raw/mirror-feed/patches-bundle.json)
+1. **Morphe Manager 2.7.1以降**を用意します。Android端末でこのページの **Add to Morphe Manager** をタップし、安定版のパッチソースを追加します。
 2. Google **17.72.17.ve.arm64** と Gemini **1.0.995038376** の元APKを用意し、両方を **標準のパッチ選択** で処理します。Android 12では、GoogleはAndroid 11以降向け、GeminiはAndroid 10以降向けのバリアントを選びます。[対応APKとバリアント](docs/setup-en.md#input-versions-and-variants)
 3. 端末標準のGoogleアプリを残した状態で、使用するプロファイルにmicroG、パッチ済みGoogle、パッチ済みGeminiをインストールします。セキュアフォルダで使う場合は、3つともフォルダ内にインストールします。microGにアカウントを追加してからGemini (Morphe)を開き、案内に沿ってアカウントへのアクセスを許可します。
 
@@ -38,7 +42,7 @@ Morphe patches for signing in to Gemini with microG on Android, including Samsun
 
 ### Installation
 
-1. Use **Morphe Manager 2.7.1 or newer** and add the stable patch source. [Add the GitHub source in Morphe](https://morphe.software/add-source?github=ryuya0124/gemini-microg-patches) · [GitLab source JSON](https://gitlab.com/ryuya0124/gemini-microg-patches/-/raw/mirror-feed/patches-bundle.json)
+1. Use **Morphe Manager 2.7.1 or newer**. Tap **Add to Morphe Manager** at the top of this page on your Android device to add the stable patch source.
 2. Get the original APKs for Google **17.72.17.ve.arm64** and Gemini **1.0.995038376**. Patch both using the **default patch selection**. On Android 12, choose the Google variant for Android 11+ and the Gemini variant for Android 10+. [Supported APK variants](docs/setup-en.md#input-versions-and-variants)
 3. Keep the system Google app installed. Install microG and both patched apps in the profile you want to use. For Secure Folder, install all three inside the folder. Add your account to microG, open Gemini (Morphe), and follow the prompts to grant account access.
 
