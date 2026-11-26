@@ -10,8 +10,8 @@ import zipfile
 root = Path(__file__).resolve().parents[1]
 metadata = json.loads((root / 'patches-bundle.json').read_text())
 version = metadata['version']
-if not re.fullmatch(r'\d+\.\d+\.\d+', version):
-    raise SystemExit('Expected a stable semantic version in patches-bundle.json')
+if not re.fullmatch(r'\d+\.\d+\.\d+(?:-[0-9a-z-]+(?:\.[0-9a-z-]+)*)?', version):
+    raise SystemExit('Expected a release or prerelease version in patches-bundle.json')
 name = f'gemini-microg-patches-{version}.mpp'
 expected_url = f'https://github.com/ryuya0124/gemini-microg-patches/releases/download/v{version}/{name}'
 assert metadata['download_url'] == expected_url
