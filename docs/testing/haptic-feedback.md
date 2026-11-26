@@ -22,6 +22,14 @@
 
 入力のAPKと監査証跡は `~/Documents/GeminiPatch-haptics/local/haptics-route-audit/` と旧版の検証フォルダ。候補のビルド、出力DEXの照合、Android 12・17の実行ログは `~/Documents/GeminiPatch-haptics-followup/local/full-audit/`。同フォルダの `build-audit-apks.sh`、`run-haptics-audit.sh`、`verify-haptics-playback.sh` で再確認できる。
 
+### チャット・Live・画像編集の追加コード監査
+
+Google全5版の候補DEXを再点検した。標準チャットの送信・回答開始・回答完了は共通の波形プレイヤーに入る。Liveの音声セッションは別の2箇所から波形を再生する。問題報告用の1箇所を含め、全版で計4箇所が `GeminiHaptics.performVibration` を通る。プレイヤーの `hasVibrator` と `cancel` は機器の確認と再生停止に使う。
+
+画像の長押しで開くコピー・共有・保存メニューの振動と、画像編集キャンバスの振動は `GeminiHaptics.performFeedback` を通る。17.78.14では `ImageExtractionContextMenuHandler` と `EditorCanvasView` の呼び出しを確認した。残っていた2引数版 `View.performHapticFeedback` は、Googleのフィード、検索結果、Lensが参照する共有処理にあった。5版のDEXから `HapticGenerator` と振動サービスのBinderを直接呼ぶ命令は検出されなかった。ログイン後の画面操作や端末側の振動には実際の操作での確認が必要。
+
+互換性を優先し、`android.permission.VIBRATE` は維持する。Google全5版の生成済みAPKのManifestで権限を確認した。17.78.14の波形をAndroid 17エミュレータで再実行し、候補版のオフで0件、オンで3件の振動要求を確認した。DEX監査と再試験のログはMacの `~/Documents/GeminiPatch-haptics-followup/local/route-review/`。
+
 ## v0.3.11-haptics.2候補
 
 Issue #8では、スイッチをオフにしても送信・考え中・回答完了に振動する場面が報告された。v0.3.11-haptics.1の3箇所はフローティング表示の `GpiView` 経路だった。各Google APKで通常チャットの入力コントローラと回答状態から波形再生までを追跡した。17.78.14では `submit_elapsed_realtime` のあるメソッドと `QueryAnswerStarted`、`QueryAnswered` が同じプレイヤーを呼ぶ。
