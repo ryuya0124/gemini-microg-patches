@@ -7,7 +7,7 @@ variables=(GOOGLE_BASE_APK_URL GOOGLE_SPLIT_APK_URL GEMINI_BASE_APK_URL)
 names=(google-base.apk google-xxhdpi.apk gemini-base.apk)
 for name in "${variables[@]}"; do
   url=${!name-}
-  if [[ "$url" != https://* || "$url" == *$'\n'* || "$url" == *$'\r'* || "$url" == *'\'* || "$url" == *'"'* ]]; then
+  if [[ "$url" != https://* || "$url" == *$'\n'* || "$url" == *$'\r'* || "$url" == *\\* || "$url" == *'"'* ]]; then
     printf 'Configure an HTTPS URL for %s\n' "$name" >&2
     exit 1
   fi
