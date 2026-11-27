@@ -1,7 +1,7 @@
 name: Release patch bundle
 on:
   push:
-    tags: ['v*']
+    tags: ['v*', '!v*-*']
 permissions:
   contents: write
 jobs:
