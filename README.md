@@ -35,7 +35,7 @@ Googleアプリの特定バージョンを対象にしています。元APKの�
 
 ## クイックスタート
 
-macOS / Linux、JDK 21、Python 3、Bashを用意します。署名にはAndroid SDK Build Tools `36.0.0`、端末への更新にはplatform-toolsが必要です。
+macOS / Linux、JDK 21、Node.js 22以降、Bash、jq、curl、zip、unzip、shasumを用意します。署名にはAndroid SDK Build Tools `36.0.0`、端末への更新にはplatform-toolsが必要です。
 
 ```sh
 git clone https://github.com/ryuya0124/gemini-microg-patches.git

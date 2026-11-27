@@ -19,7 +19,7 @@ import java.util.Properties
 
 private object Payload
 // Manager's external JVM host does not expose the desktop JSON implementation.
-// package.py derives this resource from the owning JSON profile during the build.
+// The diagnostics packager derives this resource from the owning JSON profile during the build.
 private val profile by lazy {
     Properties().apply { checkNotNull(Payload::class.java.getResourceAsStream("/diagnostics/profile.properties")).use { load(it) } }
 }

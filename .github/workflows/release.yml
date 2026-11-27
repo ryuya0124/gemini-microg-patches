@@ -15,13 +15,12 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          python3 - <<'PY'
-          import json, os
-          stable = os.environ['RELEASE_TAG'] == 'v' + json.load(open('patches-bundle.json'))['version']
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
-              out.write('stable=' + str(stable).lower() + '\n')
-          print('Stable feed matches tag' if stable else 'Experimental or historical tag; stable publisher skipped')
-          PY
+          version="$(jq -er '.version' patches-bundle.json)"
+          if [[ "$RELEASE_TAG" == "v$version" ]]; then
+            echo 'stable=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'stable=false' >> "$GITHUB_OUTPUT"
+          fi
   release:
     needs: identity
     if: ${{ needs.identity.outputs.stable == 'true' }}
@@ -44,7 +43,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          version="$(python3 -c 'import json; print(json.load(open("patches-bundle.json"))["version"])')"
+          version="$(jq -er '.version' patches-bundle.json)"
           test "$RELEASE_TAG" = "v$version"
           test -f "docs/releases/$RELEASE_TAG.md"
           gh release create "$RELEASE_TAG" "build/release/gemini-microg-patches-$version.mpp" build/release/patches-bundle.json build/release/SHA256SUMS --verify-tag --title "Gemini microG patches $RELEASE_TAG" --notes-file "docs/releases/$RELEASE_TAG.md"

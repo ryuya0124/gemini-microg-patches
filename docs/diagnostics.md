@@ -31,7 +31,7 @@ It does **not** save chat text, titles, account names, email addresses, conversa
 
 ## For maintainers
 
-The report identifies the installed diagnostic build only by an opaque code (`r`, `cr` and each process `identity.r`). `python3 diagnostics/package.py token build/diagnostics 0.3.10` prints the code of a version; `scripts/check-diagnostic-report.py REPORT --expected-build 0.3.10` checks a report against it without printing its contents.
+The report identifies the installed diagnostic build only by an opaque code (`r`, `cr` and each process `identity.r`). `node diagnostics/package.mjs token build/diagnostics 0.3.10` prints the code of a version; `node scripts/check-diagnostic-report.mjs REPORT --expected-build 0.3.10` checks a report against it without printing its contents.
 
 ## Return to stable
 
