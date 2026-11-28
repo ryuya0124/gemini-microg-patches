@@ -79,6 +79,8 @@ Android版Managerでの起動回帰、初回権限、Playストア更新停止�
 
 Secure Folderで既存署名とデータを保持してログイン・チャットを確認した記録、および現行バンドルのPatcher移行・メモリ調査も参照できます。[実機の確認記録](testing/default-clone.md#physical-update) · [Patcher 2.5移行](testing/issue-9-patcher-2.5.md)
 
+Manager 2.8.0への対応と、Google APKへのパッチ適用時間の比較は検証記録にまとめています。 [Manager 2.8とPatcher 2.6](testing/manager-2.8-performance.md)
+
 ## CIとリリース
 
 - **CI** はpush・PRでスクリプト検査とKotlinコンパイルを実行し、配布用MPP・メタデータ・チェックサムをArtifactに保存します。

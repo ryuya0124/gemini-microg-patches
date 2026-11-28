@@ -1,8 +1,8 @@
 {
   "morphe": {
-    "version": "2.3.0",
-    "url": "https://github.com/MorpheApp/morphe-desktop/releases/download/v2.3.0/morphe-desktop-2.3.0-all.jar",
-    "sha256": "e0e49525e1fbe1108d6cfd7398d39e0cd489c58a753e63653c1e8f11a0099757",
+    "version": "2.4.0",
+    "url": "https://github.com/MorpheApp/morphe-desktop/releases/download/v2.4.0/morphe-desktop-2.4.0-all.jar",
+    "sha256": "d5f75c05e6c84731dc18faa658810a3ed49ab32d60b756da8503432e78cf1477",
     "file": "morphe-desktop.jar"
   },
   "patches": {

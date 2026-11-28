@@ -1,14 +1,16 @@
 package app.morphe.patches.google.haptics
 
+import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
+import app.morphe.patcher.methodCall
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.matchAllMethodIndicesForEach
 import app.morphe.patches.google.common.HookId
 import app.morphe.patches.google.common.VersionHookRegistry
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
-import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
@@ -180,50 +182,42 @@ val geminiHapticsPatch = bytecodePatch(
 
         // Gemini calls have already been redirected above. The remaining Google APK
         // call sites include Search and Lens, even when the concrete class name is obfuscated.
+        val virtualCalls = listOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL_RANGE)
         var googleCalls = 0
-        classDefForEach { owner ->
-            if (owner.type.startsWith("Lapp/geminipatch/extension/")) return@classDefForEach
-            if (owner.methods.none { method ->
-                method.implementation?.instructions?.any { it.googleHapticTarget() != null } == true
-            }) return@classDefForEach
-            for (method in mutableClassDefBy(owner).methods) {
-                for ((index, instruction) in method.implementation?.instructions.orEmpty().withIndex().toList()) {
-                    val target = instruction.googleHapticTarget() ?: continue
-                    val invocation = when (instruction) {
-                        is FiveRegisterInstruction -> {
-                            check(instruction.registerCount in 2..3)
-                            val registers = listOf(instruction.registerC, instruction.registerD, instruction.registerE)
-                                .take(instruction.registerCount).joinToString(", ") { "v$it" }
-                            "invoke-static {$registers}"
-                        }
-                        is RegisterRangeInstruction -> {
-                            val end = instruction.startRegister + instruction.registerCount - 1
-                            "invoke-static/range {v${instruction.startRegister} .. v$end}"
-                        }
-                        else -> error("Unexpected haptic invocation: $instruction")
+
+        fun wrapCalls(owner: String?, name: String, parameterTypes: List<String>, result: String, target: String) {
+            val call = methodCall(
+                definingClass = owner, name = name, parameters = parameterTypes, returnType = result, opcodes = virtualCalls
+            )
+            Fingerprint(
+                filters = listOf(call),
+                custom = { _, clazz -> !clazz.type.startsWith("Lapp/geminipatch/extension/") }
+            ).matchAllMethodIndicesForEach(requireMatches = false) { index ->
+                // The fingerprint selects candidates through Patcher's instruction indexes.
+                val instruction = instructions[index]
+                val invocation = when (instruction) {
+                    is FiveRegisterInstruction -> {
+                        check(instruction.registerCount in 2..3)
+                        val registers = listOf(instruction.registerC, instruction.registerD, instruction.registerE)
+                            .take(instruction.registerCount).joinToString(", ") { "v$it" }
+                        "invoke-static {$registers}"
                     }
-                    method.replaceInstruction(index, "$invocation, $RUNTIME->$target")
-                    googleCalls++
+                    is RegisterRangeInstruction -> {
+                        val end = instruction.startRegister + instruction.registerCount - 1
+                        "invoke-static/range {v${instruction.startRegister} .. v$end}"
+                    }
+                    else -> error("Unexpected haptic invocation: $instruction")
                 }
+                replaceInstruction(index, "$invocation, $RUNTIME->$target")
+                googleCalls++
             }
         }
+        wrapCalls(null, "performHapticFeedback", listOf("I"), "Z", "performGoogleFeedback(Landroid/view/View;I)Z")
+        wrapCalls(null, "performHapticFeedback", listOf("I", "I"), "Z", "performGoogleFeedback(Landroid/view/View;II)Z")
+        wrapCalls("Landroid/os/Vibrator;", "vibrate", listOf("J"), "V", "performGoogleVibration(Landroid/os/Vibrator;J)V")
+        wrapCalls("Landroid/os/Vibrator;", "vibrate", listOf("Landroid/os/VibrationEffect;"), "V", "performGoogleVibration$WAVEFORM_ARGS")
         check(googleCalls > 0) { "No Google app haptic call sites found" }
     }
 }
 
 private fun MethodReference.shortDescriptor() = "$name(${parameterTypes.joinToString("")})$returnType"
-
-private fun Instruction.googleHapticTarget(): String? {
-    if (opcode != Opcode.INVOKE_VIRTUAL && opcode != Opcode.INVOKE_VIRTUAL_RANGE) return null
-    val reference = (this as ReferenceInstruction).reference as MethodReference
-    if (reference.name != "performHapticFeedback" && reference.name != "vibrate") return null
-    return when (reference.shortDescriptor()) {
-        "performHapticFeedback(I)Z" -> "performGoogleFeedback(Landroid/view/View;I)Z"
-        "performHapticFeedback(II)Z" -> "performGoogleFeedback(Landroid/view/View;II)Z"
-        "vibrate(J)V" -> if (reference.definingClass == "Landroid/os/Vibrator;")
-            "performGoogleVibration(Landroid/os/Vibrator;J)V" else null
-        "vibrate(Landroid/os/VibrationEffect;)V" -> if (reference.definingClass == "Landroid/os/Vibrator;")
-            "performGoogleVibration$WAVEFORM_ARGS" else null
-        else -> null
-    }
-}
